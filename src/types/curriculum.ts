@@ -70,6 +70,18 @@ export interface SchoolProfile {
   motto: string;
   email: string;
   phone: string;
+  logoSchoolUrl?: string; // Base64 data-URL atau link logo sekolah
+  logoPemdaUrl?: string;  // Base64 data-URL atau link logo Pemda Tubaba
+}
+
+export interface AppUser {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL?: string | null;
+  role?: string;
+  nip?: string;
+  isGoogleAuth?: boolean;
 }
 
 export type ActiveTab = 

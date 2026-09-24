@@ -11,8 +11,7 @@ import {
   LogOut,
   User as UserIcon,
 } from 'lucide-react';
-import { SchoolProfile, ActiveTab } from '../types/curriculum';
-import { User } from 'firebase/auth';
+import { SchoolProfile, ActiveTab, AppUser } from '../types/curriculum';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -27,9 +26,9 @@ interface HeaderProps {
   onNavigateToVerification: () => void;
   schoolProfile: SchoolProfile;
   isCloudConnected?: boolean;
-  currentUser?: User | null;
-  onLoginGoogle?: () => void;
-  onLogoutGoogle?: () => void;
+  currentUser?: AppUser | null;
+  onOpenAuthModal?: () => void;
+  onLogout?: () => void;
 }
 
 const TAB_TITLES: Record<ActiveTab, { title: string; subtitle?: string }> = {
@@ -60,8 +59,8 @@ export const Header: React.FC<HeaderProps> = ({
   schoolProfile,
   isCloudConnected = true,
   currentUser,
-  onLoginGoogle,
-  onLogoutGoogle,
+  onOpenAuthModal,
+  onLogout,
 }) => {
   const currentTabInfo = TAB_TITLES[activeTab] || { title: 'SI-ARKUR', subtitle: schoolProfile.name };
   const [showUserDropdown, setShowUserDropdown] = useState(false);
@@ -163,13 +162,13 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </button>
 
-          {/* Google Auth Button / Profile Dropdown */}
+          {/* User Auth Profile / Login Button */}
           {currentUser ? (
             <div className="relative">
               <button
                 onClick={() => setShowUserDropdown(!showUserDropdown)}
-                className="flex items-center gap-1.5 p-1 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer border border-slate-200"
-                title={`Login sebagai: ${currentUser.displayName || currentUser.email}`}
+                className="flex items-center gap-1.5 p-1 sm:pr-2 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer border border-slate-200"
+                title={`Masuk sebagai: ${currentUser.displayName || currentUser.email}`}
               >
                 {currentUser.photoURL ? (
                   <img
@@ -182,45 +181,76 @@ export const Header: React.FC<HeaderProps> = ({
                     {(currentUser.displayName || currentUser.email || 'G').charAt(0).toUpperCase()}
                   </div>
                 )}
-                <span className="text-xs font-semibold text-slate-800 hidden xl:inline max-w-[120px] truncate">
-                  {currentUser.displayName || currentUser.email}
-                </span>
+                <div className="hidden xl:flex flex-col text-left">
+                  <span className="text-xs font-bold text-slate-800 max-w-[120px] truncate leading-tight">
+                    {currentUser.displayName}
+                  </span>
+                  <span className="text-[10px] text-slate-500 leading-tight">
+                    {currentUser.role || 'Pendidik'}
+                  </span>
+                </div>
               </button>
 
               {showUserDropdown && (
-                <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50">
+                <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in">
                   <div className="px-4 py-2 border-b border-slate-100">
                     <p className="text-xs font-bold text-slate-900 truncate">
                       {currentUser.displayName || 'Guru SMPN 14 Tubaba'}
                     </p>
-                    <p className="text-[11px] text-slate-500 truncate font-mono">
+                    {currentUser.role && (
+                      <p className="text-[11px] text-emerald-700 font-semibold truncate mt-0.5">
+                        {currentUser.role}
+                      </p>
+                    )}
+                    {currentUser.nip && (
+                      <p className="text-[10px] text-slate-500 font-mono">
+                        NIP. {currentUser.nip}
+                      </p>
+                    )}
+                    <p className="text-[11px] text-slate-400 truncate font-mono mt-0.5">
                       {currentUser.email}
                     </p>
-                    <span className="inline-block mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                      Cloud Sync Aktif
-                    </span>
+                    <div className="flex items-center gap-1.5 mt-2">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                        {currentUser.isGoogleAuth ? 'Akun Google Terhubung' : 'Profil Pendidik Aktif'}
+                      </span>
+                    </div>
                   </div>
-                  <button
-                    onClick={() => {
-                      setShowUserDropdown(false);
-                      if (onLogoutGoogle) onLogoutGoogle();
-                    }}
-                    className="w-full px-4 py-2 text-left text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-2 cursor-pointer font-semibold"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>Keluar Akun Google</span>
-                  </button>
+
+                  <div className="py-1">
+                    <button
+                      onClick={() => {
+                        setShowUserDropdown(false);
+                        if (onOpenAuthModal) onOpenAuthModal();
+                      }}
+                      className="w-full px-4 py-2 text-left text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
+                    >
+                      <UserIcon className="w-4 h-4 text-slate-400" />
+                      <span>Ganti Akun / Profil Pendidik</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setShowUserDropdown(false);
+                        if (onLogout) onLogout();
+                      }}
+                      className="w-full px-4 py-2 text-left text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-2 cursor-pointer font-semibold"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Keluar Identitas</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
           ) : (
             <button
-              onClick={onLoginGoogle}
-              className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
-              title="Masuk dengan Akun Google Guru untuk sinkronisasi akun"
+              onClick={onOpenAuthModal}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-300 hover:border-emerald-500 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 text-xs font-semibold transition-colors cursor-pointer"
+              title="Masuk sebagai guru atau verifikator kurikulum"
             >
               <LogIn className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Masuk Google</span>
+              <span>Masuk Pendidik</span>
             </button>
           )}
 

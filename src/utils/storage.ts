@@ -51,7 +51,13 @@ export const getStoredSchoolProfile = (): SchoolProfile => {
   try {
     const data = localStorage.getItem(STORAGE_KEYS.SCHOOL);
     if (data) {
-      return JSON.parse(data);
+      const parsed = JSON.parse(data);
+      return {
+        ...INITIAL_SCHOOL_PROFILE,
+        ...parsed,
+        logoPemdaUrl: parsed.logoPemdaUrl || INITIAL_SCHOOL_PROFILE.logoPemdaUrl,
+        logoSchoolUrl: parsed.logoSchoolUrl || INITIAL_SCHOOL_PROFILE.logoSchoolUrl,
+      };
     }
   } catch (e) {
     console.error('Error loading school profile', e);

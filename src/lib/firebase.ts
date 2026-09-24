@@ -309,13 +309,59 @@ export async function seedCloudIfEmpty(): Promise<boolean> {
 }
 
 // Google Auth Helpers
+export function getGoogleAuthErrorMessage(error: any): { title: string; detail: string; actionHint: string } {
+  const code = error?.code || '';
+  const currentHost = typeof window !== 'undefined' ? window.location.hostname : '';
+
+  if (code === 'auth/operation-not-allowed') {
+    return {
+      title: 'Provider Google Belum Aktif',
+      detail: 'Metode masuk dengan Google belum diaktifkan pada Firebase Console proyek ini.',
+      actionHint: 'Buka Firebase Console -> Authentication -> tab Sign-in method -> aktifkan "Google".',
+    };
+  }
+  if (code === 'auth/unauthorized-domain') {
+    return {
+      title: 'Domain Belum Terdaftar di Firebase',
+      detail: `Domain "${currentHost}" belum diizinkan untuk otentikasi Google.`,
+      actionHint: `Tambahkan "${currentHost}" di Firebase Console -> Authentication -> Settings -> Authorized domains.`,
+    };
+  }
+  if (code === 'auth/popup-blocked') {
+    return {
+      title: 'Jendela Popup Diblokir',
+      detail: 'Peramban memblokir jendela popup masuk Google (sering terjadi jika dijalankan di dalam iFrame).',
+      actionHint: 'Izinkan pop-up di peramban Anda atau gunakan pilihan "Masuk Profil Pendidik".',
+    };
+  }
+  if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+    return {
+      title: 'Proses Masuk Dibatalkan',
+      detail: 'Jendela login ditutup sebelum proses verifikasi selesai.',
+      actionHint: 'Silakan coba klik tombol masuk kembali.',
+    };
+  }
+  return {
+    title: 'Gagal Masuk Google',
+    detail: error?.message || 'Terjadi kendala saat menghubungkan ke akun Google.',
+    actionHint: 'Gunakan opsi Masuk Profil Pendidik untuk masuk instan tanpa hambatan.',
+  };
+}
+
 export async function loginWithGoogle(): Promise<User> {
   try {
+    googleProvider.setCustomParameters({
+      prompt: 'select_account',
+    });
     const result = await signInWithPopup(auth, googleProvider);
     return result.user;
-  } catch (error) {
-    console.error('Login error:', error);
-    throw error;
+  } catch (error: any) {
+    console.warn('Google Sign-in failed with details:', error);
+    const diag = getGoogleAuthErrorMessage(error);
+    const err = new Error(`${diag.title}: ${diag.detail}`);
+    (err as any).code = error?.code;
+    (err as any).diagnostics = diag;
+    throw err;
   }
 }
 

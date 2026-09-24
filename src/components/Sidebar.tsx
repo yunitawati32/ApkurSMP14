@@ -147,9 +147,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="p-4 border-b border-slate-800 bg-slate-950/40">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-900/30">
-                <BookOpen className="w-5 h-5" />
-              </div>
+              {schoolProfile.logoSchoolUrl ? (
+                <div className="w-10 h-10 rounded-xl bg-slate-800 p-1 flex items-center justify-center shadow-md shadow-slate-950/40 border border-slate-700/60 shrink-0">
+                  <img
+                    src={schoolProfile.logoSchoolUrl}
+                    alt="Logo Sekolah"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              ) : (
+                <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-900/30 shrink-0">
+                  <BookOpen className="w-5 h-5" />
+                </div>
+              )}
               <div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs font-bold tracking-wider text-emerald-400">SI-ARKUR</span>

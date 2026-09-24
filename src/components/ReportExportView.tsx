@@ -112,23 +112,58 @@ export const ReportExportView: React.FC<ReportExportViewProps> = ({
 
       {/* Printable Sheet Wrapper */}
       <div className="bg-white p-8 sm:p-12 rounded-2xl border border-slate-200 shadow-sm print:border-none print:shadow-none print:p-0">
-        {/* Kop Surat Resmi */}
-        <div className="text-center border-b-2 border-slate-900 pb-3 mb-6 relative">
-          <p className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-0.5">
-            PEMERINTAH KABUPATEN TULANG BAWANG BARAT
-          </p>
-          <p className="text-sm font-extrabold uppercase tracking-wide text-slate-800 mb-0.5">
-            DINAS PENDIDIKAN DAN KEBUDAYAAN
-          </p>
-          <h1 className="text-xl font-black uppercase text-slate-950 tracking-wider">
-            {schoolProfile.name}
-          </h1>
-          <p className="text-xs text-slate-600 mt-1">
-            NPSN: {schoolProfile.npsn} • {schoolProfile.accreditation}
-          </p>
-          <p className="text-[11px] text-slate-500">
-            {schoolProfile.address} • Telp: {schoolProfile.phone} • Surel: {schoolProfile.email}
-          </p>
+        {/* Kop Surat Resmi dengan Logo Pemda dan Logo Sekolah */}
+        <div className="border-b-2 border-slate-900 pb-3 mb-6 relative">
+          <div className="flex items-center justify-between gap-4">
+            {/* Logo Pemda (Kiri) */}
+            <div className="w-20 h-24 flex items-center justify-center shrink-0">
+              {schoolProfile.logoPemdaUrl ? (
+                <img
+                  src={schoolProfile.logoPemdaUrl}
+                  alt="Logo Pemda Tubaba"
+                  className="max-h-24 max-w-20 object-contain"
+                />
+              ) : (
+                <div className="w-16 h-20 border border-dashed border-slate-300 rounded flex items-center justify-center text-[10px] text-slate-400 text-center">
+                  Logo Pemda
+                </div>
+              )}
+            </div>
+
+            {/* Teks Lembaga & Alamat */}
+            <div className="text-center flex-1 px-2">
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-700 mb-0.5">
+                PEMERINTAH KABUPATEN TULANG BAWANG BARAT
+              </p>
+              <p className="text-sm font-extrabold uppercase tracking-wide text-slate-900 mb-0.5">
+                DINAS PENDIDIKAN DAN KEBUDAYAAN
+              </p>
+              <h1 className="text-xl font-black uppercase text-slate-950 tracking-wider">
+                {schoolProfile.name}
+              </h1>
+              <p className="text-xs text-slate-600 mt-1">
+                NPSN: {schoolProfile.npsn} • {schoolProfile.accreditation}
+              </p>
+              <p className="text-[11px] text-slate-500">
+                {schoolProfile.address} • Telp: {schoolProfile.phone} • Surel: {schoolProfile.email}
+              </p>
+            </div>
+
+            {/* Logo Sekolah (Kanan) */}
+            <div className="w-20 h-24 flex items-center justify-center shrink-0">
+              {schoolProfile.logoSchoolUrl ? (
+                <img
+                  src={schoolProfile.logoSchoolUrl}
+                  alt="Logo Sekolah"
+                  className="max-h-24 max-w-20 object-contain"
+                />
+              ) : (
+                <div className="w-16 h-20 border border-dashed border-slate-300 rounded flex items-center justify-center text-[10px] text-slate-400 text-center">
+                  Logo Sekolah
+                </div>
+              )}
+            </div>
+          </div>
           <div className="w-full h-1 bg-slate-950 mt-3 mb-0.5"></div>
           <div className="w-full h-px bg-slate-950"></div>
         </div>

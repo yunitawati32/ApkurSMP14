@@ -1,4 +1,5 @@
 import { CurriculumDoc, CategoryDef, SchoolProfile } from '../types/curriculum';
+import { DEFAULT_PEMDA_LOGO_SVG, DEFAULT_SCHOOL_LOGO_SVG } from '../utils/imageOptimizer';
 
 export const INITIAL_SCHOOL_PROFILE: SchoolProfile = {
   name: 'SMP Negeri 14 Tulang Bawang Barat',
@@ -15,6 +16,8 @@ export const INITIAL_SCHOOL_PROFILE: SchoolProfile = {
   motto: 'Unggul dalam Prestasi, Berkarakter Pelajar Pancasila, Berbudaya Lingkungan Tubaba',
   email: 'smpn14.tubaba@sekolah.belajar.id',
   phone: '(0726) 882014 / 0812-7890-1414',
+  logoPemdaUrl: DEFAULT_PEMDA_LOGO_SVG,
+  logoSchoolUrl: DEFAULT_SCHOOL_LOGO_SVG,
 };
 
 export const INITIAL_CATEGORIES: CategoryDef[] = [

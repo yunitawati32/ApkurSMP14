@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   School,
   Award,
@@ -12,9 +12,21 @@ import {
   RotateCcw,
   CheckCircle,
   Save,
+  Image as ImageIcon,
+  Building2,
+  Trash2,
+  RefreshCw,
+  Sparkles,
+  Eye,
+  FileCheck,
 } from 'lucide-react';
 import { SchoolProfile, CurriculumDoc, CategoryDef } from '../types/curriculum';
 import { INITIAL_DOCUMENTS, INITIAL_CATEGORIES, INITIAL_SCHOOL_PROFILE } from '../data/initialData';
+import {
+  optimizeImageFile,
+  DEFAULT_PEMDA_LOGO_SVG,
+  DEFAULT_SCHOOL_LOGO_SVG,
+} from '../utils/imageOptimizer';
 
 interface SchoolProfileViewProps {
   profile: SchoolProfile;
@@ -36,6 +48,17 @@ export const SchoolProfileView: React.FC<SchoolProfileViewProps> = ({
   const [formData, setFormData] = useState<SchoolProfile>(profile);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
+  const [logoNotification, setLogoNotification] = useState<string | null>(null);
+  const [isUploadingPemda, setIsUploadingPemda] = useState<boolean>(false);
+  const [isUploadingSchool, setIsUploadingSchool] = useState<boolean>(false);
+
+  const pemdaFileInputRef = useRef<HTMLInputElement>(null);
+  const schoolFileInputRef = useRef<HTMLInputElement>(null);
+
+  const showNotification = (msg: string) => {
+    setLogoNotification(msg);
+    setTimeout(() => setLogoNotification(null), 3500);
+  };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,6 +66,103 @@ export const SchoolProfileView: React.FC<SchoolProfileViewProps> = ({
     setIsEditing(false);
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 2500);
+  };
+
+  // Upload Logo Pemda Handler
+  const handleUploadPemdaLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Reset input value so same file can be re-selected if needed
+    e.target.value = '';
+
+    setIsUploadingPemda(true);
+    try {
+      const dataUrl = await optimizeImageFile(file, 280, 280);
+      const updated: SchoolProfile = {
+        ...profile,
+        logoPemdaUrl: dataUrl,
+      };
+      setFormData(updated);
+      onUpdateProfile(updated);
+      showNotification('Logo Pemkab Tulang Bawang Barat berhasil diunggah dan disimpan!');
+    } catch (err) {
+      console.error('Failed to process Pemda logo:', err);
+      alert('Gagal memproses berkas gambar logo Pemda.');
+    } finally {
+      setIsUploadingPemda(false);
+    }
+  };
+
+  // Upload Logo Sekolah Handler
+  const handleUploadSchoolLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    e.target.value = '';
+
+    setIsUploadingSchool(true);
+    try {
+      const dataUrl = await optimizeImageFile(file, 280, 280);
+      const updated: SchoolProfile = {
+        ...profile,
+        logoSchoolUrl: dataUrl,
+      };
+      setFormData(updated);
+      onUpdateProfile(updated);
+      showNotification('Logo SMPN 14 Tulang Bawang Barat berhasil diunggah dan disimpan!');
+    } catch (err) {
+      console.error('Failed to process School logo:', err);
+      alert('Gagal memproses berkas gambar logo Sekolah.');
+    } finally {
+      setIsUploadingSchool(false);
+    }
+  };
+
+  // Reset to default preset logos
+  const handleResetPemdaLogo = () => {
+    const updated: SchoolProfile = {
+      ...profile,
+      logoPemdaUrl: DEFAULT_PEMDA_LOGO_SVG,
+    };
+    setFormData(updated);
+    onUpdateProfile(updated);
+    showNotification('Logo Pemkab Tulang Bawang Barat dikembalikan ke lambang resmi default.');
+  };
+
+  const handleResetSchoolLogo = () => {
+    const updated: SchoolProfile = {
+      ...profile,
+      logoSchoolUrl: DEFAULT_SCHOOL_LOGO_SVG,
+    };
+    setFormData(updated);
+    onUpdateProfile(updated);
+    showNotification('Logo Sekolah dikembalikan ke lambang Tut Wuri Handayani default.');
+  };
+
+  // Remove logos
+  const handleRemovePemdaLogo = () => {
+    if (window.confirm('Hapus Logo Pemda dari profil dan Kop Surat?')) {
+      const updated: SchoolProfile = {
+        ...profile,
+        logoPemdaUrl: '',
+      };
+      setFormData(updated);
+      onUpdateProfile(updated);
+      showNotification('Logo Pemda dihapus.');
+    }
+  };
+
+  const handleRemoveSchoolLogo = () => {
+    if (window.confirm('Hapus Logo Sekolah dari profil dan Kop Surat?')) {
+      const updated: SchoolProfile = {
+        ...profile,
+        logoSchoolUrl: '',
+      };
+      setFormData(updated);
+      onUpdateProfile(updated);
+      showNotification('Logo Sekolah dihapus.');
+    }
   };
 
   const handleDownloadBackup = () => {
@@ -95,8 +215,33 @@ export const SchoolProfileView: React.FC<SchoolProfileViewProps> = ({
       {/* Header Banner */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-md">
-            <School className="w-8 h-8" />
+          <div className="flex items-center gap-2">
+            {profile.logoPemdaUrl && (
+              <div
+                className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-200 p-1.5 flex items-center justify-center shadow-xs"
+                title="Logo Pemkab Tulang Bawang Barat"
+              >
+                <img
+                  src={profile.logoPemdaUrl}
+                  alt="Logo Pemda Tubaba"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            )}
+            <div
+              className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-200 p-1.5 flex items-center justify-center shadow-xs"
+              title="Logo SMPN 14 Tulang Bawang Barat"
+            >
+              {profile.logoSchoolUrl ? (
+                <img
+                  src={profile.logoSchoolUrl}
+                  alt="Logo SMPN 14 Tubaba"
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <School className="w-8 h-8 text-emerald-600" />
+              )}
+            </div>
           </div>
           <div>
             <h2 className="text-xl font-bold text-slate-900">{profile.name}</h2>
@@ -117,11 +262,285 @@ export const SchoolProfileView: React.FC<SchoolProfileViewProps> = ({
       </div>
 
       {saveSuccess && (
-        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex items-center gap-2">
-          <CheckCircle className="w-4 h-4" />
+        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex items-center gap-2 animate-in fade-in">
+          <CheckCircle className="w-4 h-4 text-emerald-600" />
           <span>Profil sekolah berhasil diperbarui!</span>
         </div>
       )}
+
+      {logoNotification && (
+        <div className="p-3 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-xl text-xs flex items-center gap-2 shadow-xs animate-in fade-in">
+          <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span className="font-medium">{logoNotification}</span>
+        </div>
+      )}
+
+      {/* SECTION KHUSUS: UPLOAD & KELOLA LOGO PEMDA & LOGO SEKOLAH */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 p-5 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400">
+              <Building2 className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold leading-tight">
+                Menu Upload Logo Lembaga (Pemda & Sekolah)
+              </h3>
+              <p className="text-xs text-slate-300">
+                Otomatis dicantumkan pada Kop Surat resmi, cetak laporan, sampul berkas, dan navigasi
+              </p>
+            </div>
+          </div>
+          <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 self-start sm:self-auto">
+            🟢 Tersinkron Real-time Cloud
+          </span>
+        </div>
+
+        <div className="p-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* KARTU 1: LOGO PEMDA TUBABA */}
+            <div className="p-5 rounded-2xl border border-slate-200 bg-slate-50/70 space-y-4 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                      Logo Pemda Tubaba (Kiri Kop)
+                    </h4>
+                  </div>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 border border-blue-200">
+                    Sisi Kiri Kop Surat
+                  </span>
+                </div>
+
+                {/* Logo Preview Frame */}
+                <div className="w-full h-40 rounded-xl bg-white border-2 border-dashed border-slate-300 flex flex-col items-center justify-center p-3 relative group">
+                  {profile.logoPemdaUrl ? (
+                    <img
+                      src={profile.logoPemdaUrl}
+                      alt="Logo Pemda Tubaba"
+                      className="max-h-32 max-w-full object-contain transition-transform group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="text-center text-slate-400">
+                      <ImageIcon className="w-10 h-10 mx-auto mb-1 opacity-40" />
+                      <p className="text-xs font-medium">Belum ada logo Pemda</p>
+                      <p className="text-[10px]">Klik tombol di bawah untuk memilih gambar</p>
+                    </div>
+                  )}
+
+                  {isUploadingPemda && (
+                    <div className="absolute inset-0 bg-white/80 backdrop-blur-2xs rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-700">
+                      <RefreshCw className="w-4 h-4 animate-spin text-emerald-600" />
+                      <span>Mengompresi & Menyimpan...</span>
+                    </div>
+                  )}
+                </div>
+
+                <p className="text-[11px] text-slate-500 mt-2">
+                  Lambang resmi Pemerintah Kabupaten Tulang Bawang Barat. Format didukung: <strong>PNG (latar transparan), JPG, SVG, WebP</strong>.
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-2 pt-2">
+                <input
+                  type="file"
+                  ref={pemdaFileInputRef}
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  onChange={handleUploadPemdaLogo}
+                  className="hidden"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => pemdaFileInputRef.current?.click()}
+                  disabled={isUploadingPemda}
+                  className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>{profile.logoPemdaUrl ? 'Ganti Logo Pemda Tubaba' : 'Unggah Logo Pemda Tubaba'}</span>
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleResetPemdaLogo}
+                    className="flex-1 py-1.5 px-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer text-center"
+                    title="Kembalikan ke lambang Tubaba bawaan"
+                  >
+                    Pakai Lambang Resmi Tubaba
+                  </button>
+                  {profile.logoPemdaUrl && (
+                    <button
+                      type="button"
+                      onClick={handleRemovePemdaLogo}
+                      className="p-1.5 text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition-colors cursor-pointer"
+                      title="Hapus Logo Pemda"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* KARTU 2: LOGO SEKOLAH (SMPN 14 TUBABA) */}
+            <div className="p-5 rounded-2xl border border-slate-200 bg-slate-50/70 space-y-4 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                      Logo Sekolah (Kanan Kop & Banner)
+                    </h4>
+                  </div>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    Sisi Kanan Kop Surat
+                  </span>
+                </div>
+
+                {/* Logo Preview Frame */}
+                <div className="w-full h-40 rounded-xl bg-white border-2 border-dashed border-slate-300 flex flex-col items-center justify-center p-3 relative group">
+                  {profile.logoSchoolUrl ? (
+                    <img
+                      src={profile.logoSchoolUrl}
+                      alt="Logo SMPN 14 Tubaba"
+                      className="max-h-32 max-w-full object-contain transition-transform group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="text-center text-slate-400">
+                      <School className="w-10 h-10 mx-auto mb-1 opacity-40" />
+                      <p className="text-xs font-medium">Belum ada logo Sekolah</p>
+                      <p className="text-[10px]">Klik tombol di bawah untuk memilih gambar</p>
+                    </div>
+                  )}
+
+                  {isUploadingSchool && (
+                    <div className="absolute inset-0 bg-white/80 backdrop-blur-2xs rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-700">
+                      <RefreshCw className="w-4 h-4 animate-spin text-emerald-600" />
+                      <span>Mengompresi & Menyimpan...</span>
+                    </div>
+                  )}
+                </div>
+
+                <p className="text-[11px] text-slate-500 mt-2">
+                  Lambang resmi SMPN 14 Tulang Bawang Barat / Tut Wuri Handayani. Format didukung: <strong>PNG, JPG, SVG, WebP</strong>.
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-2 pt-2">
+                <input
+                  type="file"
+                  ref={schoolFileInputRef}
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  onChange={handleUploadSchoolLogo}
+                  className="hidden"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => schoolFileInputRef.current?.click()}
+                  disabled={isUploadingSchool}
+                  className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>{profile.logoSchoolUrl ? 'Ganti Logo Sekolah' : 'Unggah Logo Sekolah'}</span>
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleResetSchoolLogo}
+                    className="flex-1 py-1.5 px-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer text-center"
+                    title="Kembalikan ke lambang sekolah default"
+                  >
+                    Pakai Lambang Default Sekolah
+                  </button>
+                  {profile.logoSchoolUrl && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveSchoolLogo}
+                      className="p-1.5 text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition-colors cursor-pointer"
+                      title="Hapus Logo Sekolah"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* SIMULASI TAMPILAN KOP SURAT DINAS */}
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2">
+                <Eye className="w-4 h-4 text-slate-600" />
+                <span className="text-xs font-bold text-slate-800">
+                  Pratinjau Posisi Logo pada Kop Surat Dinas Resmi
+                </span>
+              </div>
+              <span className="text-[10px] text-slate-500 font-medium">
+                (Standar Surat Dinas Pemkab & Kurikulum)
+              </span>
+            </div>
+
+            <div className="bg-white p-4 sm:p-6 rounded-lg border border-slate-300 shadow-xs">
+              <div className="flex items-center justify-between gap-3">
+                {/* Sisi Kiri: Logo Pemda */}
+                <div className="w-14 h-16 sm:w-16 sm:h-20 flex items-center justify-center shrink-0">
+                  {profile.logoPemdaUrl ? (
+                    <img
+                      src={profile.logoPemdaUrl}
+                      alt="Kop Pemda"
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  ) : (
+                    <div className="w-12 h-14 border border-dashed border-slate-300 rounded flex items-center justify-center text-[9px] text-slate-400 text-center">
+                      Logo Pemda
+                    </div>
+                  )}
+                </div>
+
+                {/* Bagian Tengah: Teks Lembaga */}
+                <div className="text-center flex-1 px-2">
+                  <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-600">
+                    PEMERINTAH KABUPATEN TULANG BAWANG BARAT
+                  </p>
+                  <p className="text-[11px] sm:text-xs font-extrabold uppercase tracking-wide text-slate-800">
+                    DINAS PENDIDIKAN DAN KEBUDAYAAN
+                  </p>
+                  <h4 className="text-xs sm:text-sm font-black uppercase text-slate-900 tracking-wider">
+                    {profile.name}
+                  </h4>
+                  <p className="text-[9px] sm:text-[10px] text-slate-500">
+                    NPSN: {profile.npsn} • {profile.accreditation} • {profile.address}
+                  </p>
+                </div>
+
+                {/* Sisi Kanan: Logo Sekolah */}
+                <div className="w-14 h-16 sm:w-16 sm:h-20 flex items-center justify-center shrink-0">
+                  {profile.logoSchoolUrl ? (
+                    <img
+                      src={profile.logoSchoolUrl}
+                      alt="Kop Sekolah"
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  ) : (
+                    <div className="w-12 h-14 border border-dashed border-slate-300 rounded flex items-center justify-center text-[9px] text-slate-400 text-center">
+                      Logo Sekolah
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="w-full h-0.5 bg-slate-900 mt-2 mb-0.5"></div>
+              <div className="w-full h-px bg-slate-900"></div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* School Information Form or View */}
       {isEditing ? (
@@ -219,19 +638,63 @@ export const SchoolProfileView: React.FC<SchoolProfileViewProps> = ({
                 className="w-full text-xs p-2.5 border border-slate-300 rounded-xl font-mono"
               />
             </div>
+            <div>
+              <label className="text-xs font-bold uppercase text-slate-600 block mb-1">
+                Kecamatan
+              </label>
+              <input
+                type="text"
+                value={formData.district}
+                onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                className="w-full text-xs p-2.5 border border-slate-300 rounded-xl"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase text-slate-600 block mb-1">
+                Kabupaten / Wilayah
+              </label>
+              <input
+                type="text"
+                value={formData.regency}
+                onChange={(e) => setFormData({ ...formData, regency: e.target.value })}
+                className="w-full text-xs p-2.5 border border-slate-300 rounded-xl"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase text-slate-600 block mb-1">
+                Email Satuan
+              </label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className="w-full text-xs p-2.5 border border-slate-300 rounded-xl"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase text-slate-600 block mb-1">
+                Nomor Telepon
+              </label>
+              <input
+                type="text"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                className="w-full text-xs p-2.5 border border-slate-300 rounded-xl"
+              />
+            </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
             <button
               type="button"
               onClick={() => setIsEditing(false)}
-              className="px-4 py-2 text-xs text-slate-600 hover:bg-slate-100 rounded-xl"
+              className="px-4 py-2 text-xs text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
             >
               Batal
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5"
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer"
             >
               <Save className="w-4 h-4" />
               Simpan Perubahan

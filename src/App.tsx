@@ -25,6 +25,7 @@ import {
   SchoolProfile,
   ActiveTab,
   DocStatus,
+  AppUser,
 } from './types/curriculum';
 import {
   getStoredDocs,
@@ -55,8 +56,10 @@ import {
   auth,
   loginWithGoogle,
   logoutUser,
+  getGoogleAuthErrorMessage,
 } from './lib/firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
+import { AuthModal } from './components/AuthModal';
 import { CheckCircle2, AlertCircle, X } from 'lucide-react';
 
 export default function App() {
@@ -65,9 +68,18 @@ export default function App() {
   const [categories, setCategories] = useState<CategoryDef[]>(() => getStoredCategories());
   const [schoolProfile, setSchoolProfile] = useState<SchoolProfile>(() => getStoredSchoolProfile());
 
-  // Firebase Auth & Cloud Realtime States
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  // User Auth & Cloud Realtime States
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(() => {
+    try {
+      const saved = localStorage.getItem('siarkur_active_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
   const [isCloudConnected, setIsCloudConnected] = useState<boolean>(true);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [authError, setAuthError] = useState<{ title: string; detail: string; actionHint: string } | null>(null);
 
   // UI Navigation States
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
@@ -92,8 +104,19 @@ export default function App() {
 
   // 1. Firebase Auth Listener
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        const appUser: AppUser = {
+          uid: firebaseUser.uid,
+          displayName: firebaseUser.displayName,
+          email: firebaseUser.email,
+          photoURL: firebaseUser.photoURL,
+          role: 'Pendidik Akun Google',
+          isGoogleAuth: true,
+        };
+        setCurrentUser(appUser);
+        localStorage.setItem('siarkur_active_user', JSON.stringify(appUser));
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -254,10 +277,11 @@ export default function App() {
 
   const handleUpdateSchoolProfile = (newProfile: SchoolProfile) => {
     setSchoolProfile(newProfile);
+    saveStoredSchoolProfile(newProfile);
     saveSchoolProfileToCloud(newProfile).catch((err) => {
       console.error('Failed to sync school profile to cloud:', err);
     });
-    showToast('Profil sekolah berhasil diperbarui dan disinkronkan ke Cloud!');
+    showToast('Profil sekolah & logo berhasil diperbarui dan disinkronkan ke Cloud!');
   };
 
   const handleResetData = () => {
@@ -287,20 +311,41 @@ export default function App() {
 
   const handleLoginGoogle = async () => {
     try {
+      setAuthError(null);
       const user = await loginWithGoogle();
+      const appUser: AppUser = {
+        uid: user.uid,
+        displayName: user.displayName,
+        email: user.email,
+        photoURL: user.photoURL,
+        role: 'Pendidik Akun Google',
+        isGoogleAuth: true,
+      };
+      setCurrentUser(appUser);
+      localStorage.setItem('siarkur_active_user', JSON.stringify(appUser));
       showToast(`Selamat datang, ${user.displayName || user.email}! Akun Google terhubung.`);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Login failed:', err);
-      showToast('Gagal masuk dengan Google. Silakan coba lagi.', 'info');
+      const diag = err?.diagnostics || getGoogleAuthErrorMessage(err);
+      setAuthError(diag);
+      setIsAuthModalOpen(true);
+      throw err;
     }
   };
 
-  const handleLogoutGoogle = async () => {
+  const handleSelectTeacherProfile = (profile: AppUser) => {
+    setCurrentUser(profile);
+    localStorage.setItem('siarkur_active_user', JSON.stringify(profile));
+    showToast(`Berhasil masuk sebagai: ${profile.displayName} (${profile.role || 'Pendidik'})`);
+  };
+
+  const handleLogout = async () => {
     try {
-      await logoutUser();
-      showToast('Berhasil keluar dari Akun Google.', 'info');
-    } catch (err) {
-      console.error('Logout failed:', err);
+      await logoutUser().catch(() => {});
+    } finally {
+      setCurrentUser(null);
+      localStorage.removeItem('siarkur_active_user');
+      showToast('Berhasil keluar identitas pendidik.', 'info');
     }
   };
 
@@ -408,8 +453,8 @@ export default function App() {
           schoolProfile={schoolProfile}
           isCloudConnected={isCloudConnected}
           currentUser={currentUser}
-          onLoginGoogle={handleLoginGoogle}
-          onLogoutGoogle={handleLogoutGoogle}
+          onOpenAuthModal={() => setIsAuthModalOpen(true)}
+          onLogout={handleLogout}
         />
 
         {/* Toast Alert */}
@@ -577,6 +622,7 @@ export default function App() {
         defaultAcademicYear={selectedAcademicYear}
         defaultCategoryName={uploadCategory}
         defaultTargetRole={uploadRole}
+        currentUser={currentUser}
         onSuccess={handleAddNewDocument}
       />
 
@@ -588,6 +634,19 @@ export default function App() {
         schoolProfile={schoolProfile}
         onDownload={handleDownloadDocument}
         onUpdateStatus={handleUpdateDocStatus}
+      />
+
+      {/* Teacher & Google Auth Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => {
+          setIsAuthModalOpen(false);
+          setAuthError(null);
+        }}
+        onLoginGoogle={handleLoginGoogle}
+        onSelectTeacherProfile={handleSelectTeacherProfile}
+        authError={authError}
+        clearAuthError={() => setAuthError(null)}
       />
     </div>
   );

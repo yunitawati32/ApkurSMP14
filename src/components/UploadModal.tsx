@@ -36,6 +36,7 @@ import {
   SemesterType,
   CurriculumModel,
   DocStatus,
+  AppUser,
 } from '../types/curriculum';
 import { SUBJECT_LIST, ACADEMIC_YEARS } from '../data/initialData';
 import { generateDocCode } from '../utils/storage';
@@ -48,6 +49,7 @@ interface UploadModalProps {
   defaultAcademicYear: string;
   defaultCategoryName?: string;
   defaultTargetRole?: string;
+  currentUser?: AppUser | null;
   onSuccess: (newDoc: CurriculumDoc | CurriculumDoc[]) => void;
 }
 
@@ -70,14 +72,15 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   defaultAcademicYear,
   defaultCategoryName,
   defaultTargetRole,
+  currentUser,
   onSuccess,
 }) => {
   // Mode: 'batch' (multi-kategori sekaligus) or 'single' (berkas satuan)
   const [uploadMode, setUploadMode] = useState<'batch' | 'single'>('batch');
 
   // Shared Form Metadata (Diisi 1x untuk semua berkas)
-  const [authorName, setAuthorName] = useState<string>('Yunitawati, S.Pd., M.M.');
-  const [authorNip, setAuthorNip] = useState<string>('19840618 200903 2 007');
+  const [authorName, setAuthorName] = useState<string>(() => currentUser?.displayName || 'Dra. Yunitawati, M.Pd.');
+  const [authorNip, setAuthorNip] = useState<string>(() => currentUser?.nip || '19780512 200501 2 008');
   const [subject, setSubject] = useState<string>('Matematika');
   const [grade, setGrade] = useState<GradeLevel>('Kelas 7');
   const [academicYear, setAcademicYear] = useState<string>(defaultAcademicYear || '2024/2025');
@@ -123,8 +126,14 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       } else if (!singleCategoryId && categories.length > 0) {
         setSingleCategoryId(categories[1]?.id || categories[0]?.id);
       }
+      if (currentUser?.displayName) {
+        setAuthorName(currentUser.displayName);
+      }
+      if (currentUser?.nip) {
+        setAuthorNip(currentUser.nip);
+      }
     }
-  }, [isOpen, defaultCategoryName, categories]);
+  }, [isOpen, defaultCategoryName, categories, currentUser]);
 
   if (!isOpen) return null;
 
