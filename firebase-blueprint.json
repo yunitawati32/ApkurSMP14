@@ -1,0 +1,92 @@
+{
+  "entities": {
+    "CurriculumDoc": {
+      "title": "CurriculumDoc",
+      "description": "Dokumen kurikulum dan arsip pembelajaran SMPN 14 Tulang Bawang Barat",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "code": { "type": "string", "maxLength": 64 },
+        "title": { "type": "string", "maxLength": 255 },
+        "category": { "type": "string", "maxLength": 100 },
+        "subCategory": { "type": "string", "maxLength": 100 },
+        "domain": { "type": "string", "maxLength": 50 },
+        "targetRole": { "type": "string", "maxLength": 100 },
+        "curriculumType": { "type": "string", "maxLength": 50 },
+        "grade": { "type": "string", "maxLength": 50 },
+        "subject": { "type": "string", "maxLength": 100 },
+        "academicYear": { "type": "string", "maxLength": 20 },
+        "semester": { "type": "string", "maxLength": 30 },
+        "authorName": { "type": "string", "maxLength": 100 },
+        "authorNip": { "type": "string", "maxLength": 50 },
+        "uploadDate": { "type": "string", "maxLength": 20 },
+        "fileName": { "type": "string", "maxLength": 255 },
+        "fileType": { "type": "string", "maxLength": 20 },
+        "fileSize": { "type": "string", "maxLength": 30 },
+        "fileDataUrl": { "type": "string", "maxLength": 1048576 },
+        "tags": { "type": "array", "description": "Daftar label atau kata kunci dokumen" },
+        "description": { "type": "string", "maxLength": 2000 },
+        "status": { "type": "string", "enum": ["Terverifikasi", "Menunggu Verifikasi", "Perlu Revisi", "Draft"] },
+        "verifiedBy": { "type": "string", "maxLength": 100 },
+        "verifiedDate": { "type": "string", "maxLength": 30 },
+        "verificationNotes": { "type": "string", "maxLength": 1000 },
+        "downloadCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "code", "title", "category", "subject", "academicYear", "semester", "authorName", "fileName", "status"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Kategori klasifikasi arsip kurikulum",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 100 },
+        "codePrefix": { "type": "string", "maxLength": 20 },
+        "iconName": { "type": "string", "maxLength": 50 },
+        "description": { "type": "string", "maxLength": 255 },
+        "color": { "type": "string", "maxLength": 50 },
+        "bgLight": { "type": "string", "maxLength": 50 },
+        "domain": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "name", "codePrefix", "description"]
+    },
+    "SchoolProfile": {
+      "title": "SchoolProfile",
+      "description": "Profil kelembagaan SMPN 14 Tulang Bawang Barat",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 150 },
+        "npsn": { "type": "string", "maxLength": 30 },
+        "district": { "type": "string", "maxLength": 100 },
+        "regency": { "type": "string", "maxLength": 100 },
+        "province": { "type": "string", "maxLength": 100 },
+        "address": { "type": "string", "maxLength": 255 },
+        "accreditation": { "type": "string", "maxLength": 20 },
+        "headmaster": { "type": "string", "maxLength": 100 },
+        "headmasterNip": { "type": "string", "maxLength": 50 },
+        "curriculumVice": { "type": "string", "maxLength": 100 },
+        "curriculumViceNip": { "type": "string", "maxLength": 50 },
+        "motto": { "type": "string", "maxLength": 255 },
+        "email": { "type": "string", "maxLength": 100 },
+        "phone": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["name", "npsn", "headmaster", "curriculumVice"]
+    }
+  },
+  "firestore": {
+    "/curriculum_docs/{docId}": {
+      "schema": { "$ref": "#/entities/CurriculumDoc" },
+      "description": "Koleksi berkas kurikulum dan pembelajaran yang disinkronkan secara realtime"
+    },
+    "/categories/{categoryId}": {
+      "schema": { "$ref": "#/entities/Category" },
+      "description": "Daftar kategori arsip"
+    },
+    "/school_profile/{profileId}": {
+      "schema": { "$ref": "#/entities/SchoolProfile" },
+      "description": "Data profil kelembagaan SMPN 14 Tulang Bawang Barat"
+    }
+  }
+}

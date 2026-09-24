@@ -1,0 +1,6 @@
+{
+  "name": "SI-ARKUR SMPN 14 Tulang Bawang Barat",
+  "description": "Sistem Informasi Arsip Kurikulum Digital SMPN 14 Tulang Bawang Barat dengan manajemen berkas, klasifikasi kategori, verifikasi, dan pencarian dokumen.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

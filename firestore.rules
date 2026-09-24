@@ -1,0 +1,75 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'yunitawati32@guru.smp.belajar.id'
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128;
+    }
+
+    function isValidCurriculumDoc(data) {
+      return data.keys().hasAll(['id', 'code', 'title', 'category', 'subject', 'academicYear', 'semester', 'authorName', 'fileName', 'status'])
+        && data.id is string && data.id.size() <= 128
+        && data.code is string && data.code.size() <= 64
+        && data.title is string && data.title.size() <= 255
+        && data.category is string && data.category.size() <= 100
+        && data.subject is string && data.subject.size() <= 100
+        && data.academicYear is string && data.academicYear.size() <= 20
+        && data.semester is string && data.semester.size() <= 30
+        && data.authorName is string && data.authorName.size() <= 100
+        && data.fileName is string && data.fileName.size() <= 255
+        && data.status in ['Terverifikasi', 'Menunggu Verifikasi', 'Perlu Revisi', 'Draft'];
+    }
+
+    function isValidCategory(data) {
+      return data.keys().hasAll(['id', 'name', 'codePrefix', 'description'])
+        && data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() <= 100
+        && data.codePrefix is string && data.codePrefix.size() <= 20
+        && data.description is string && data.description.size() <= 255;
+    }
+
+    function isValidSchoolProfile(data) {
+      return data.keys().hasAll(['name', 'npsn', 'headmaster', 'curriculumVice'])
+        && data.name is string && data.name.size() <= 150
+        && data.npsn is string && data.npsn.size() <= 30;
+    }
+
+    // Curriculum Documents Collection
+    match /curriculum_docs/{docId} {
+      allow read: if true;
+      allow create: if isValidId(docId) && isValidCurriculumDoc(request.resource.data);
+      allow update: if isValidId(docId) && isValidCurriculumDoc(request.resource.data);
+      allow delete: if isValidId(docId);
+    }
+
+    // Categories Collection
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow create: if isValidId(categoryId) && isValidCategory(request.resource.data);
+      allow update: if isValidId(categoryId) && isValidCategory(request.resource.data);
+      allow delete: if isValidId(categoryId);
+    }
+
+    // School Profile Collection
+    match /school_profile/{profileId} {
+      allow read: if true;
+      allow create, update: if isValidId(profileId) && isValidSchoolProfile(request.resource.data);
+      allow delete: if false;
+    }
+  }
+}
