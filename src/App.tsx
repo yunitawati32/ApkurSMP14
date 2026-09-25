@@ -18,6 +18,7 @@ import { ExtracurricularDocsView } from './components/ExtracurricularDocsView';
 import { OtherActivitiesDocsView } from './components/OtherActivitiesDocsView';
 import { UploadModal } from './components/UploadModal';
 import { DocumentDetailModal } from './components/DocumentDetailModal';
+import { FilePreviewModal } from './components/FilePreviewModal';
 
 import {
   CurriculumDoc,
@@ -85,12 +86,31 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedAcademicYear, setSelectedAcademicYear] = useState<string>('2024/2025');
+  const [selectedAcademicYear, setSelectedAcademicYear] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem('siarkur_academic_year');
+      if (saved && ACADEMIC_YEARS.includes(saved) && saved !== '2024/2025') {
+        return saved;
+      }
+    } catch {
+      // ignore
+    }
+    return '2026/2027';
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('siarkur_academic_year', selectedAcademicYear);
+    } catch {
+      // ignore
+    }
+  }, [selectedAcademicYear]);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
 
   // Modals
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
   const [activeDetailDoc, setActiveDetailDoc] = useState<CurriculumDoc | null>(null);
+  const [previewDoc, setPreviewDoc] = useState<CurriculumDoc | null>(null);
 
   // Toast notification
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
@@ -508,6 +528,7 @@ export default function App() {
               setSearchQuery={setSearchQuery}
               selectedAcademicYear={selectedAcademicYear}
               onOpenDocDetail={(doc) => setActiveDetailDoc(doc)}
+              onPreviewDoc={(doc) => setPreviewDoc(doc)}
               onDownloadDoc={handleDownloadDocument}
               onDeleteDoc={handleDeleteDocument}
               onOpenUpload={() => handleOpenUploadWithPreset()}
@@ -634,6 +655,20 @@ export default function App() {
         schoolProfile={schoolProfile}
         onDownload={handleDownloadDocument}
         onUpdateStatus={handleUpdateDocStatus}
+        onOpenFullscreenPreview={(doc) => setPreviewDoc(doc)}
+      />
+
+      {/* Dedicated File Preview Modal */}
+      <FilePreviewModal
+        isOpen={Boolean(previewDoc)}
+        onClose={() => setPreviewDoc(null)}
+        document={previewDoc}
+        schoolProfile={schoolProfile}
+        onDownload={handleDownloadDocument}
+        onOpenDetail={(doc) => {
+          setPreviewDoc(null);
+          setActiveDetailDoc(doc);
+        }}
       />
 
       {/* Teacher & Google Auth Modal */}

@@ -1,17 +1,52 @@
 import { CurriculumDoc, CategoryDef, SchoolProfile } from '../types/curriculum';
 import { INITIAL_CATEGORIES, INITIAL_DOCUMENTS, INITIAL_SCHOOL_PROFILE } from '../data/initialData';
 
+export const normalizeDocCategory = (categoryName: string): string => {
+  const map: Record<string, string> = {
+    'KOSP (Kurikulum Sekolah)': 'Modul Ajar/RPP',
+    'Modul Ajar & RPP': 'Modul Ajar/RPP',
+    'Alur Tujuan Pembelajaran (ATP/CP)': 'Alur Tujuan Pembelajaran (ATP)',
+    'Asesmen & Bank Soal': 'Kriteria Ketercapaian Tujuan Pembelajaran (KKTP)',
+    'Prota & Promes': 'Program Tahunan',
+    'Modul Projek P5': 'Modul Ajar/RPP',
+    'Jadwal & Kalender Akademik': 'Kalender pendidikan',
+    'SK Tugas & Regulasi': 'Kalender pendidikan',
+    'LKPD & Lembar Siswa': 'Modul Ajar/RPP',
+    'Dokumen & Portofolio Guru': 'Kriteria Ketercapaian Tujuan Pembelajaran (KKTP)',
+    'Dokumen Administrasi Wali Kelas': 'Program Semester',
+    'Dokumen Pembina Ekstrakurikuler': 'Program Tahunan',
+    'Dokumen Kegiatan Sekolah & Notula': 'Kalender pendidikan',
+  };
+  return map[categoryName] || categoryName;
+};
+
+export const normalizeDocAcademicYear = (year?: string): string => {
+  if (!year || year === '2024/2025') {
+    return '2026/2027';
+  }
+  return year;
+};
+
 const STORAGE_KEYS = {
-  DOCS: 'siarkur_docs_v2',
-  CATEGORIES: 'siarkur_categories_v2',
+  DOCS: 'siarkur_docs_v4',
+  CATEGORIES: 'siarkur_categories_v3',
   SCHOOL: 'siarkur_school_v2',
 };
 
 export const getStoredDocs = (): CurriculumDoc[] => {
   try {
-    const data = localStorage.getItem(STORAGE_KEYS.DOCS);
+    const data =
+      localStorage.getItem(STORAGE_KEYS.DOCS) ||
+      localStorage.getItem('siarkur_docs_v3') ||
+      localStorage.getItem('siarkur_docs_v2');
     if (data) {
-      return JSON.parse(data);
+      const parsed: CurriculumDoc[] = JSON.parse(data);
+      return parsed.map((d) => ({
+        ...d,
+        category: normalizeDocCategory(d.category),
+        academicYear: normalizeDocAcademicYear(d.academicYear),
+        title: d.title ? d.title.replace(/2024\/2025/g, '2026/2027') : d.title,
+      }));
     }
   } catch (e) {
     console.error('Error loading stored docs', e);
@@ -31,11 +66,18 @@ export const getStoredCategories = (): CategoryDef[] => {
   try {
     const data = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
     if (data) {
-      return JSON.parse(data);
+      const parsed = JSON.parse(data);
+      const hasStandard = parsed.some(
+        (c: CategoryDef) => c.id === 'rincian-minggu-efektif' || c.id === 'kktp'
+      );
+      if (hasStandard && parsed.length > 0) {
+        return parsed;
+      }
     }
   } catch (e) {
     console.error('Error loading stored categories', e);
   }
+  saveStoredCategories(INITIAL_CATEGORIES);
   return INITIAL_CATEGORIES;
 };
 

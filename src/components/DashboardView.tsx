@@ -47,15 +47,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const verifiedDocs = documents.filter((d) => d.status === 'Terverifikasi').length;
   const pendingDocs = documents.filter((d) => d.status === 'Menunggu Verifikasi').length;
 
+  const standardCategories = [
+    'Kalender pendidikan',
+    'Rincian Minggu Efektif',
+    'Capaian Pembelajaran (CP)',
+    'Alur Tujuan Pembelajaran (ATP)',
+    'Program Tahunan',
+    'Program Semester',
+    'Kriteria Ketercapaian Tujuan Pembelajaran (KKTP)',
+    'Modul Ajar/RPP',
+    'Dokumen & Portofolio Guru',
+    'Modul Ajar & RPP',
+    'Alur Tujuan Pembelajaran (ATP/CP)',
+    'Prota & Promes',
+  ];
+
   const teacherDocsCount = documents.filter(
     (d) =>
       d.domain === 'guru' ||
-      d.category === 'Dokumen & Portofolio Guru' ||
-      d.category === 'Modul Ajar & RPP' ||
-      d.category === 'Alur Tujuan Pembelajaran (ATP/CP)' ||
-      d.category === 'Prota & Promes' ||
+      standardCategories.includes(d.category) ||
       d.tags?.some((t) =>
-        ['Jurnal Mengajar', 'Daftar Nilai', 'PMM', 'Remedial', 'Agenda Guru'].includes(t)
+        ['Jurnal Mengajar', 'Daftar Nilai', 'PMM', 'Remedial', 'Agenda Guru', 'KKTP', 'RME'].includes(t)
       )
   ).length;
 
@@ -205,10 +217,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </span>
               </div>
               <h3 className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                Dokumen Guru
+                Dokumen Guru (Perangkat Pembelajaran)
               </h3>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Modul Ajar, ATP, Jurnal Mengajar, Buku Nilai, dan Program Remedial Pendidik.
+                8 Kelengkapan: Kalender pendidikan, RME, CP, ATP, Prota, Promes, KKTP, dan Modul Ajar/RPP.
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-blue-600 font-semibold group-hover:translate-x-0.5 transition-transform">

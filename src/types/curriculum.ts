@@ -17,7 +17,7 @@ export type ArchiveDomain =
 
 export interface CurriculumDoc {
   id: string;
-  code: string; // e.g., ARKUR-2024-KOSP-001
+  code: string; // e.g., ARKUR-2026-KAL-001
   title: string;
   category: string;
   subCategory?: string;
@@ -26,7 +26,7 @@ export interface CurriculumDoc {
   curriculumType: CurriculumModel;
   grade: GradeLevel;
   subject: string;
-  academicYear: string; // e.g., '2024/2025'
+  academicYear: string; // e.g., '2026/2027'
   semester: SemesterType;
   authorName: string;
   authorNip?: string;

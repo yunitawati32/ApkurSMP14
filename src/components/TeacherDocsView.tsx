@@ -42,15 +42,27 @@ export const TeacherDocsView: React.FC<TeacherDocsViewProps> = ({
   onUpdateStatus,
 }) => {
   // Filter for teacher documents (by domain 'guru', category, or tags)
+  const standardCategories = [
+    'Kalender pendidikan',
+    'Rincian Minggu Efektif',
+    'Capaian Pembelajaran (CP)',
+    'Alur Tujuan Pembelajaran (ATP)',
+    'Program Tahunan',
+    'Program Semester',
+    'Kriteria Ketercapaian Tujuan Pembelajaran (KKTP)',
+    'Modul Ajar/RPP',
+    'Dokumen & Portofolio Guru',
+    'Modul Ajar & RPP',
+    'Alur Tujuan Pembelajaran (ATP/CP)',
+    'Prota & Promes',
+  ];
+
   const teacherDocs = documents.filter(
     (d) =>
       d.domain === 'guru' ||
-      d.category === 'Dokumen & Portofolio Guru' ||
-      d.category === 'Modul Ajar & RPP' ||
-      d.category === 'Alur Tujuan Pembelajaran (ATP/CP)' ||
-      d.category === 'Prota & Promes' ||
+      standardCategories.includes(d.category) ||
       d.tags?.some((t) =>
-        ['Jurnal Mengajar', 'Daftar Nilai', 'PMM', 'Remedial', 'Agenda Guru'].includes(t)
+        ['Jurnal Mengajar', 'Daftar Nilai', 'PMM', 'Remedial', 'Agenda Guru', 'KKTP', 'RME'].includes(t)
       )
   );
 
@@ -66,11 +78,51 @@ export const TeacherDocsView: React.FC<TeacherDocsViewProps> = ({
 
   const filteredDocs = teacherDocs.filter((doc) => {
     if (selectedSubTab !== 'Semua') {
-      if (selectedSubTab === 'Jurnal Mengajar' && !doc.title.toLowerCase().includes('jurnal') && doc.subCategory !== 'Jurnal Mengajar') return false;
-      if (selectedSubTab === 'Daftar Nilai' && !doc.title.toLowerCase().includes('nilai') && doc.subCategory !== 'Daftar Nilai') return false;
-      if (selectedSubTab === 'Portofolio PMM' && !doc.title.toLowerCase().includes('pmm') && !doc.tags?.includes('PMM') && doc.subCategory !== 'Portofolio PMM') return false;
-      if (selectedSubTab === 'Remedial & Pengayaan' && !doc.title.toLowerCase().includes('remedial') && doc.subCategory !== 'Remedial & Pengayaan') return false;
-      if (selectedSubTab === 'Perangkat Ajar (Modul/ATP)' && !doc.category.includes('Modul') && !doc.category.includes('ATP')) return false;
+      if (selectedSubTab === '1. Kalender Pendidikan') {
+        if (doc.category !== 'Kalender pendidikan' && !doc.title.toLowerCase().includes('kalender')) return false;
+      } else if (selectedSubTab === '2. Rincian Minggu Efektif') {
+        if (doc.category !== 'Rincian Minggu Efektif' && !doc.title.toLowerCase().includes('efektif')) return false;
+      } else if (selectedSubTab === '3. CP & ATP') {
+        if (
+          doc.category !== 'Capaian Pembelajaran (CP)' &&
+          doc.category !== 'Alur Tujuan Pembelajaran (ATP)' &&
+          !doc.title.toLowerCase().includes('cp') &&
+          !doc.title.toLowerCase().includes('atp')
+        )
+          return false;
+      } else if (selectedSubTab === '4. Prota & Promes') {
+        if (
+          doc.category !== 'Program Tahunan' &&
+          doc.category !== 'Program Semester' &&
+          !doc.title.toLowerCase().includes('prota') &&
+          !doc.title.toLowerCase().includes('promes')
+        )
+          return false;
+      } else if (selectedSubTab === '5. KKTP') {
+        if (
+          doc.category !== 'Kriteria Ketercapaian Tujuan Pembelajaran (KKTP)' &&
+          !doc.title.toLowerCase().includes('kktp') &&
+          !doc.title.toLowerCase().includes('kriteria')
+        )
+          return false;
+      } else if (selectedSubTab === '6. Modul Ajar/RPP') {
+        if (
+          doc.category !== 'Modul Ajar/RPP' &&
+          !doc.title.toLowerCase().includes('modul') &&
+          !doc.title.toLowerCase().includes('rpp')
+        )
+          return false;
+      } else if (selectedSubTab === 'Jurnal & Nilai') {
+        const lower = doc.title.toLowerCase();
+        if (
+          !lower.includes('jurnal') &&
+          !lower.includes('nilai') &&
+          !lower.includes('presensi') &&
+          doc.subCategory !== 'Jurnal Mengajar' &&
+          doc.subCategory !== 'Daftar Nilai'
+        )
+          return false;
+      }
     }
     if (selectedSubject !== 'Semua' && doc.subject !== selectedSubject) return false;
     if (selectedTeacher !== 'Semua' && doc.authorName !== selectedTeacher) return false;
@@ -92,18 +144,14 @@ export const TeacherDocsView: React.FC<TeacherDocsViewProps> = ({
   const pendingCount = teacherDocs.filter((d) => d.status === 'Menunggu Verifikasi').length;
 
   const standardChecklist = [
-    { no: 1, title: 'Capaian Pembelajaran (CP) & Alur Tujuan Pembelajaran (ATP)', desc: 'Pemetaan fase D per elemen' },
-    { no: 2, title: 'Modul Ajar / RPP Berdiferensiasi', desc: 'Lengkap rubrik asesmen formatif' },
-    { no: 3, title: 'Program Tahunan (Prota) & Program Semester (Promes)', desc: 'Alokasi pekan efektif KBM' },
-    { no: 4, title: 'Jadwal Tatap Muka & Kalender Pendidikan', desc: 'Penyesuaian jam efektif sekolah' },
-    { no: 5, title: 'Buku Jurnal Harian Mengajar & Agenda Guru', desc: 'Catatan kemajuan dan kejadian kelas' },
-    { no: 6, title: 'Buku Presensi & Kehadiran Siswa per Mapel', desc: 'Rekap kehadiran tatap muka' },
-    { no: 7, title: 'Kisi-Kisi Soal & Instrumen Asesmen Diagnostik', desc: 'Awal dan tengah semester' },
-    { no: 8, title: 'Buku Rekapitulasi Nilai Formatif & Sumatif', desc: 'Nilai per TP dan konversi KKTP' },
-    { no: 9, title: 'Analisis Hasil Asesmen & Butir Soal', desc: 'Pemetaan daya serap materi' },
-    { no: 10, title: 'Program & Pelaksanaan Remedial serta Pengayaan', desc: 'Bimbingan siswa belum tuntas' },
-    { no: 11, title: 'Bahan Ajar, LKPD & Media Digital Pembelajaran', desc: 'Materi ajar kontekstual Tubaba' },
-    { no: 12, title: 'Portofolio Guru & Sertifikat Pelatihan Mandiri PMM', desc: 'Pengembangan keprofesian berkelanjutan' },
+    { no: 1, title: 'Kalender pendidikan', desc: 'Jadwal tatap muka KBM, hari efektif belajar & kalender sekolah' },
+    { no: 2, title: 'Rincian Minggu Efektif', desc: 'Analisis perhitungan minggu efektif dan total alokasi jam tatap muka' },
+    { no: 3, title: 'Capaian Pembelajaran (CP)', desc: 'Pemetaan kompetensi dan elemen materi resmi Fase D' },
+    { no: 4, title: 'Alur Tujuan Pembelajaran (ATP)', desc: 'Rangkaian tujuan pembelajaran yang tersusun logis dan terurut' },
+    { no: 5, title: 'Program Tahunan', desc: 'Rencana alokasi waktu satu tahun ajaran penuh per materi TP' },
+    { no: 6, title: 'Program Semester', desc: 'Distribusi materi KBM per pekan untuk semester ganjil dan genap' },
+    { no: 7, title: 'Kriteria Ketercapaian Tujuan Pembelajaran (KKTP)', desc: 'Rubrik deskripsi kriteria dan skala interval ketuntasan asesmen' },
+    { no: 8, title: 'Modul Ajar/RPP', desc: 'Perangkat ajar berdiferensiasi lengkap langkah KBM & asesmen formatif' },
   ];
 
   return (
@@ -207,11 +255,13 @@ export const TeacherDocsView: React.FC<TeacherDocsViewProps> = ({
       <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-slate-200">
         {[
           'Semua',
-          'Jurnal Mengajar',
-          'Daftar Nilai',
-          'Portofolio PMM',
-          'Remedial & Pengayaan',
-          'Perangkat Ajar (Modul/ATP)',
+          '1. Kalender Pendidikan',
+          '2. Rincian Minggu Efektif',
+          '3. CP & ATP',
+          '4. Prota & Promes',
+          '5. KKTP',
+          '6. Modul Ajar/RPP',
+          'Jurnal & Nilai',
         ].map((tab) => (
           <button
             key={tab}

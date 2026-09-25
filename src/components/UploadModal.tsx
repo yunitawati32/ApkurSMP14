@@ -27,6 +27,7 @@ import {
   HelpCircle,
   FilePlus,
   Zap,
+  Eye,
 } from 'lucide-react';
 import {
   CurriculumDoc,
@@ -40,6 +41,8 @@ import {
 } from '../types/curriculum';
 import { SUBJECT_LIST, ACADEMIC_YEARS } from '../data/initialData';
 import { generateDocCode } from '../utils/storage';
+import { saveFileToCache } from '../utils/fileCache';
+import { FilePreviewModal } from './FilePreviewModal';
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -83,7 +86,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   const [authorNip, setAuthorNip] = useState<string>(() => currentUser?.nip || '19780512 200501 2 008');
   const [subject, setSubject] = useState<string>('Matematika');
   const [grade, setGrade] = useState<GradeLevel>('Kelas 7');
-  const [academicYear, setAcademicYear] = useState<string>(defaultAcademicYear || '2024/2025');
+  const [academicYear, setAcademicYear] = useState<string>(defaultAcademicYear || '2026/2027');
   const [semester, setSemester] = useState<SemesterType>('Ganjil');
   const [curriculumType, setCurriculumType] = useState<CurriculumModel>('Kurikulum Merdeka');
   const [initialStatus, setInitialStatus] = useState<DocStatus>('Menunggu Verifikasi');
@@ -106,9 +109,34 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   const [singleDescription, setSingleDescription] = useState<string>('');
   const [singleDragActive, setSingleDragActive] = useState<boolean>(false);
 
+  // File Preview Modal state before uploading
+  const [previewRawFile, setPreviewRawFile] = useState<{
+    name: string;
+    type: FileType;
+    dataUrl?: string;
+    size?: string;
+    title?: string;
+    category?: string;
+  } | null>(null);
+
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitProgress, setSubmitProgress] = useState<string>('');
+
+  const handleSingleFileSelect = (file: File) => {
+    setSingleFile(file);
+    setSingleFileSizeStr(formatFileSize(file.size));
+    const ft = detectFileType(file.name);
+    setSingleFileTypeStr(ft);
+    if (!singleTitle) {
+      setSingleTitle(file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '));
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSingleFileDataUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Initialize or reset category slots when modal opens or metadata changes
   useEffect(() => {
@@ -126,6 +154,9 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       } else if (!singleCategoryId && categories.length > 0) {
         setSingleCategoryId(categories[1]?.id || categories[0]?.id);
       }
+      if (defaultAcademicYear) {
+        setAcademicYear(defaultAcademicYear);
+      }
       if (currentUser?.displayName) {
         setAuthorName(currentUser.displayName);
       }
@@ -140,20 +171,29 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   // Helper: Get Icon for category
   const getCategoryIcon = (prefix: string) => {
     switch (prefix) {
-      case 'KOSP':
-        return <BookMarked className="w-5 h-5 text-indigo-600" />;
-      case 'MOD':
-        return <FileText className="w-5 h-5 text-blue-600" />;
-      case 'ATP':
-        return <GitMerge className="w-5 h-5 text-emerald-600" />;
-      case 'ASM':
-        return <CheckSquare className="w-5 h-5 text-amber-600" />;
-      case 'PRO':
-        return <CalendarRange className="w-5 h-5 text-purple-600" />;
-      case 'P5':
-        return <Sparkles className="w-5 h-5 text-rose-600" />;
       case 'KAL':
         return <CalendarDays className="w-5 h-5 text-cyan-600" />;
+      case 'RME':
+        return <CalendarRange className="w-5 h-5 text-indigo-600" />;
+      case 'CP':
+        return <CheckSquare className="w-5 h-5 text-blue-600" />;
+      case 'ATP':
+        return <GitMerge className="w-5 h-5 text-emerald-600" />;
+      case 'PROTA':
+      case 'PRO':
+        return <BookMarked className="w-5 h-5 text-amber-600" />;
+      case 'PROMES':
+        return <Layers className="w-5 h-5 text-purple-600" />;
+      case 'KKTP':
+      case 'ASM':
+        return <Award className="w-5 h-5 text-teal-600" />;
+      case 'MOD':
+      case 'RPP':
+        return <FileText className="w-5 h-5 text-rose-600" />;
+      case 'KOSP':
+        return <BookMarked className="w-5 h-5 text-indigo-600" />;
+      case 'P5':
+        return <Sparkles className="w-5 h-5 text-rose-600" />;
       case 'SK':
         return <Award className="w-5 h-5 text-teal-600" />;
       case 'GUR':
@@ -188,15 +228,29 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
   // Generate a clean default title for a category
   const generateDefaultTitle = (cat: CategoryDef): string => {
-    const isSpecial = ['KOSP', 'KAL', 'SK', 'KEG'].includes(cat.codePrefix);
-    if (isSpecial) {
-      return `${cat.name} SMPN 14 Tulang Bawang Barat T.A ${academicYear}`;
+    if (cat.codePrefix === 'KAL' || cat.id === 'kalender-pendidikan') {
+      return `Kalender Pendidikan SMPN 14 Tulang Bawang Barat T.A ${academicYear}`;
     }
-    if (cat.codePrefix === 'WLK') {
-      return `Administrasi Wali ${grade} - ${semester} T.A ${academicYear}`;
+    if (cat.codePrefix === 'RME' || cat.id === 'rincian-minggu-efektif') {
+      return `Rincian Minggu Efektif (RME) ${subject} ${grade} Semester ${semester} T.A ${academicYear}`;
     }
-    if (cat.codePrefix === 'ESK') {
-      return `Program Kerja & Administrasi Ekstrakurikuler T.A ${academicYear}`;
+    if (cat.codePrefix === 'CP' || cat.id === 'capaian-pembelajaran') {
+      return `Capaian Pembelajaran (CP) ${subject} Fase D T.A ${academicYear}`;
+    }
+    if (cat.codePrefix === 'ATP' || cat.id === 'alur-tujuan-pembelajaran') {
+      return `Alur Tujuan Pembelajaran (ATP) ${subject} ${grade} T.A ${academicYear}`;
+    }
+    if (cat.codePrefix === 'PROTA' || cat.id === 'program-tahunan') {
+      return `Program Tahunan (Prota) ${subject} ${grade} T.A ${academicYear}`;
+    }
+    if (cat.codePrefix === 'PROMES' || cat.id === 'program-semester') {
+      return `Program Semester (Promes) ${subject} ${grade} Semester ${semester} T.A ${academicYear}`;
+    }
+    if (cat.codePrefix === 'KKTP' || cat.id === 'kktp') {
+      return `Kriteria Ketercapaian Tujuan Pembelajaran (KKTP) ${subject} ${grade} Semester ${semester} T.A ${academicYear}`;
+    }
+    if (cat.codePrefix === 'MOD' || cat.id === 'modul-ajar-rpp') {
+      return `Modul Ajar/RPP ${subject} ${grade} Semester ${semester} T.A ${academicYear}`;
     }
     return `${cat.name} ${subject} ${grade} - Semester ${semester} T.A ${academicYear}`;
   };
@@ -268,35 +322,65 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
     Array.from(files).forEach((file) => {
       const lower = file.name.toLowerCase();
-      // Match heuristics
+      // Match heuristics for the 8 standard categories
       let targetCat: CategoryDef | undefined;
 
-      if (lower.includes('modul') || lower.includes('rpp') || lower.includes('ajar')) {
-        targetCat = categories.find((c) => c.codePrefix === 'MOD') || categories.find((c) => c.id === 'modul-ajar');
-      } else if (lower.includes('atp') || lower.includes('cp') || lower.includes('tujuan') || lower.includes('capaian')) {
-        targetCat = categories.find((c) => c.codePrefix === 'ATP') || categories.find((c) => c.id === 'atp-cp');
-      } else if (lower.includes('prota') || lower.includes('promes') || lower.includes('tahunan') || lower.includes('semester')) {
-        targetCat = categories.find((c) => c.codePrefix === 'PRO') || categories.find((c) => c.id === 'prota-promes');
-      } else if (lower.includes('asesmen') || lower.includes('soal') || lower.includes('kisi') || lower.includes('sts') || lower.includes('sas')) {
-        targetCat = categories.find((c) => c.codePrefix === 'ASM') || categories.find((c) => c.id === 'asesmen');
-      } else if (lower.includes('p5') || lower.includes('projek') || lower.includes('pancasila')) {
-        targetCat = categories.find((c) => c.codePrefix === 'P5') || categories.find((c) => c.id === 'projek-p5');
-      } else if (lower.includes('lkpd') || lower.includes('kerja') || lower.includes('lembar')) {
-        targetCat = categories.find((c) => c.codePrefix === 'LKP') || categories.find((c) => c.id === 'lkpd-bahan');
-      } else if (lower.includes('wali') || lower.includes('kasus') || lower.includes('leger') || lower.includes('visit') || lower.includes('rombel')) {
-        targetCat = categories.find((c) => c.codePrefix === 'WLK') || categories.find((c) => c.id === 'dokumen-wali-kelas');
-      } else if (lower.includes('pramuka') || lower.includes('eskul') || lower.includes('pmr') || lower.includes('ekstra') || lower.includes('prestasi')) {
-        targetCat = categories.find((c) => c.codePrefix === 'ESK') || categories.find((c) => c.id === 'dokumen-pembina-eskul');
-      } else if (lower.includes('notula') || lower.includes('rapat') || lower.includes('anbk') || lower.includes('ppdb') || lower.includes('panitia') || lower.includes('iht')) {
-        targetCat = categories.find((c) => c.codePrefix === 'KEG') || categories.find((c) => c.id === 'dokumen-kegiatan-lainnya');
-      } else if (lower.includes('jurnal') || lower.includes('nilai') || lower.includes('remedial') || lower.includes('pmm') || lower.includes('guru')) {
-        targetCat = categories.find((c) => c.codePrefix === 'GUR') || categories.find((c) => c.id === 'dokumen-guru');
-      } else if (lower.includes('kosp') || lower.includes('kurikulum')) {
-        targetCat = categories.find((c) => c.codePrefix === 'KOSP') || categories.find((c) => c.id === 'kosp');
-      } else if (lower.includes('sk') || lower.includes('surat') || lower.includes('tugas') || lower.includes('keputusan')) {
-        targetCat = categories.find((c) => c.codePrefix === 'SK') || categories.find((c) => c.id === 'sk-regulasi');
-      } else if (lower.includes('jadwal') || lower.includes('kalender')) {
-        targetCat = categories.find((c) => c.codePrefix === 'KAL') || categories.find((c) => c.id === 'jadwal-kalender');
+      if (lower.includes('kalender') || lower.includes('jadwal') || lower.includes('akademik')) {
+        targetCat = categories.find((c) => c.codePrefix === 'KAL' || c.id === 'kalender-pendidikan');
+      } else if (
+        lower.includes('minggu efektif') ||
+        lower.includes('pekan efektif') ||
+        lower.includes('rme') ||
+        lower.includes('efektif')
+      ) {
+        targetCat = categories.find((c) => c.codePrefix === 'RME' || c.id === 'rincian-minggu-efektif');
+      } else if (
+        lower.includes('capaian') ||
+        lower.includes(' cp ') ||
+        lower.endsWith(' cp') ||
+        lower.includes('(cp)') ||
+        lower.includes('cp_') ||
+        lower.includes('cp-')
+      ) {
+        targetCat = categories.find((c) => c.codePrefix === 'CP' || c.id === 'capaian-pembelajaran');
+      } else if (
+        lower.includes('atp') ||
+        lower.includes('alur tujuan') ||
+        lower.includes('alur pembelajaran')
+      ) {
+        targetCat = categories.find((c) => c.codePrefix === 'ATP' || c.id === 'alur-tujuan-pembelajaran');
+      } else if (
+        lower.includes('prota') ||
+        lower.includes('program tahunan') ||
+        (lower.includes('tahunan') && !lower.includes('promes'))
+      ) {
+        targetCat = categories.find((c) => c.codePrefix === 'PROTA' || c.id === 'program-tahunan');
+      } else if (
+        lower.includes('promes') ||
+        lower.includes('program semester') ||
+        lower.includes('semester')
+      ) {
+        targetCat = categories.find((c) => c.codePrefix === 'PROMES' || c.id === 'program-semester');
+      } else if (
+        lower.includes('kktp') ||
+        lower.includes('ketercapaian') ||
+        lower.includes('kriteria') ||
+        lower.includes('ketuntasan') ||
+        lower.includes('rubrik') ||
+        lower.includes('nilai') ||
+        lower.includes('asesmen') ||
+        lower.includes('soal')
+      ) {
+        targetCat = categories.find((c) => c.codePrefix === 'KKTP' || c.id === 'kktp');
+      } else if (
+        lower.includes('modul') ||
+        lower.includes('rpp') ||
+        lower.includes('ajar') ||
+        lower.includes('lkpd') ||
+        lower.includes('kosp') ||
+        lower.includes('p5')
+      ) {
+        targetCat = categories.find((c) => c.codePrefix === 'MOD' || c.id === 'modul-ajar-rpp');
       }
 
       if (!targetCat) {
@@ -306,6 +390,19 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
       if (targetCat) {
         matchedCount++;
+        const targetId = targetCat.id;
+        const reader = new FileReader();
+        reader.onload = () => {
+          setCategorySlots((prev) => ({
+            ...prev,
+            [targetId]: {
+              ...prev[targetId],
+              fileDataUrl: reader.result as string,
+            },
+          }));
+        };
+        reader.readAsDataURL(file);
+
         newSlots[targetCat.id] = {
           file,
           fileName: file.name,
@@ -319,7 +416,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
     setCategorySlots(newSlots);
     setAutoMatchMessage(
-      `Berhasil mencocokkan ${matchedCount} berkas ke kategori dokumen yang sesuai!`
+      `Berhasil mencocokkan ${matchedCount} berkas ke kategori Kelengkapan Perangkat Pembelajaran yang sesuai!`
     );
     setTimeout(() => setAutoMatchMessage(null), 5000);
   };
@@ -327,25 +424,16 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   // Filter Categories by Preset
   const displayedCategories = categories.filter((cat) => {
     if (activePresetFilter === 'all') return true;
-    if (activePresetFilter === 'guru') {
-      return ['modul-ajar', 'atp-cp', 'prota-promes', 'asesmen', 'dokumen-guru', 'lkpd-bahan', 'projek-p5'].includes(
+    if (activePresetFilter === 'waktu') {
+      return ['kalender-pendidikan', 'rincian-minggu-efektif', 'program-tahunan', 'program-semester'].includes(
         cat.id
       );
     }
-    if (activePresetFilter === 'wali-kelas') {
-      return cat.id === 'dokumen-wali-kelas' || cat.domain === 'wali-kelas';
+    if (activePresetFilter === 'cp-atp') {
+      return ['capaian-pembelajaran', 'alur-tujuan-pembelajaran'].includes(cat.id);
     }
-    if (activePresetFilter === 'pembina-eskul') {
-      return cat.id === 'dokumen-pembina-eskul' || cat.domain === 'pembina-eskul';
-    }
-    if (activePresetFilter === 'kegiatan') {
-      return (
-        cat.id === 'dokumen-kegiatan-lainnya' ||
-        cat.id === 'kosp' ||
-        cat.id === 'sk-regulasi' ||
-        cat.id === 'jadwal-kalender' ||
-        cat.domain === 'kegiatan-lainnya'
-      );
+    if (activePresetFilter === 'kktp-modul') {
+      return ['kktp', 'modul-ajar-rpp'].includes(cat.id);
     }
     return true;
   });
@@ -400,6 +488,10 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       status: initialStatus,
       downloadCount: 0,
     };
+
+    if (newDoc.fileDataUrl) {
+      saveFileToCache(newDoc.id, newDoc.fileDataUrl, newDoc.fileName, newDoc.fileType);
+    }
 
     setTimeout(() => {
       onSuccess(newDoc);
@@ -477,6 +569,10 @@ export const UploadModal: React.FC<UploadModalProps> = ({
         status: initialStatus,
         downloadCount: 0,
       };
+
+      if (newDoc.fileDataUrl) {
+        saveFileToCache(newDoc.id, newDoc.fileDataUrl, newDoc.fileName, newDoc.fileType);
+      }
 
       createdDocs.push(newDoc);
       runningDocsList.push(newDoc);
@@ -811,69 +907,70 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
               {/* Preset Filter Tabs */}
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-                <span className="text-slate-400 text-[11px] font-medium shrink-0 mr-1">Filter Kategori:</span>
+                <span className="text-slate-400 text-[11px] font-medium shrink-0 mr-1">Filter Komponen:</span>
                 <button
                   type="button"
                   onClick={() => setActivePresetFilter('all')}
                   className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer shrink-0 ${
                     activePresetFilter === 'all'
-                      ? 'bg-slate-900 text-white shadow-2xs'
+                      ? 'bg-slate-900 text-white shadow-2xs font-bold'
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
                 >
-                  Semua Kategori ({categories.length})
+                  Semua Perangkat Pembelajaran ({categories.length})
                 </button>
                 <button
                   type="button"
-                  onClick={() => setActivePresetFilter('guru')}
+                  onClick={() => setActivePresetFilter('waktu')}
                   className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer shrink-0 ${
-                    activePresetFilter === 'guru'
-                      ? 'bg-blue-600 text-white shadow-2xs'
-                      : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
-                  }`}
-                >
-                  📘 Paket Perangkat Guru (Modul, ATP, Prota, Nilai)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActivePresetFilter('wali-kelas')}
-                  className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer shrink-0 ${
-                    activePresetFilter === 'wali-kelas'
-                      ? 'bg-emerald-600 text-white shadow-2xs'
+                    activePresetFilter === 'waktu'
+                      ? 'bg-emerald-600 text-white shadow-2xs font-bold'
                       : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
                   }`}
                 >
-                  👥 Paket Wali Kelas (Kasus, Leger, Home Visit)
+                  📅 Waktu (Kalender, RME, Prota, Promes)
                 </button>
                 <button
                   type="button"
-                  onClick={() => setActivePresetFilter('pembina-eskul')}
+                  onClick={() => setActivePresetFilter('cp-atp')}
                   className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer shrink-0 ${
-                    activePresetFilter === 'pembina-eskul'
-                      ? 'bg-amber-600 text-white shadow-2xs'
-                      : 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200'
+                    activePresetFilter === 'cp-atp'
+                      ? 'bg-blue-600 text-white shadow-2xs font-bold'
+                      : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
                   }`}
                 >
-                  🏆 Paket Eskul (Pramuka, PMR, Rohis)
+                  🎯 Capaian & Alur (CP & ATP)
                 </button>
                 <button
                   type="button"
-                  onClick={() => setActivePresetFilter('kegiatan')}
+                  onClick={() => setActivePresetFilter('kktp-modul')}
                   className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer shrink-0 ${
-                    activePresetFilter === 'kegiatan'
-                      ? 'bg-purple-600 text-white shadow-2xs'
+                    activePresetFilter === 'kktp-modul'
+                      ? 'bg-purple-600 text-white shadow-2xs font-bold'
                       : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'
                   }`}
                 >
-                  📋 Paket Kegiatan Sekolah (Notula, ANBK, SK)
+                  📝 Asesmen & Ajar (KKTP & Modul Ajar/RPP)
                 </button>
               </div>
 
               {/* Grid of All Categories Upload Slots */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                {displayedCategories.map((cat) => {
+                {displayedCategories.map((cat, idx) => {
                   const slot = categorySlots[cat.id];
                   const hasFile = Boolean(slot);
+                  const standardOrder = [
+                    'kalender-pendidikan',
+                    'rincian-minggu-efektif',
+                    'capaian-pembelajaran',
+                    'alur-tujuan-pembelajaran',
+                    'program-tahunan',
+                    'program-semester',
+                    'kktp',
+                    'modul-ajar-rpp',
+                  ];
+                  const itemIndex = standardOrder.indexOf(cat.id);
+                  const itemNum = itemIndex !== -1 ? itemIndex + 1 : idx + 1;
 
                   return (
                     <div
@@ -895,7 +992,10 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                             {getCategoryIcon(cat.codePrefix)}
                           </div>
                           <div>
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 border border-emerald-200 font-mono">
+                                #{itemNum}
+                              </span>
                               <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 border border-slate-200">
                                 [{cat.codePrefix}]
                               </span>
@@ -943,6 +1043,24 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                               </div>
 
                               <div className="flex items-center gap-1 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setPreviewRawFile({
+                                      name: slot.fileName,
+                                      type: slot.fileType,
+                                      dataUrl: slot.fileDataUrl,
+                                      size: slot.fileSizeStr,
+                                      title: slot.title,
+                                      category: cat.name,
+                                    })
+                                  }
+                                  className="inline-flex items-center gap-1 p-1 text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 rounded cursor-pointer text-[11px] font-semibold transition-colors"
+                                  title="Pratinjau berkas ini"
+                                >
+                                  <Eye className="w-3.5 h-3.5 text-emerald-600" />
+                                  <span>Lihat</span>
+                                </button>
                                 <label className="p-1 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded cursor-pointer text-[11px] font-semibold">
                                   <span>Ganti</span>
                                   <input
@@ -1052,13 +1170,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                     e.preventDefault();
                     setSingleDragActive(false);
                     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                      const f = e.dataTransfer.files[0];
-                      setSingleFile(f);
-                      setSingleFileSizeStr(formatFileSize(f.size));
-                      setSingleFileTypeStr(detectFileType(f.name));
-                      if (!singleTitle) {
-                        setSingleTitle(f.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '));
-                      }
+                      handleSingleFileSelect(e.dataTransfer.files[0]);
                     }
                   }}
                   onClick={() => singleFileInputRef.current?.click()}
@@ -1077,29 +1189,51 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                     accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg"
                     onChange={(e) => {
                       if (e.target.files && e.target.files[0]) {
-                        const f = e.target.files[0];
-                        setSingleFile(f);
-                        setSingleFileSizeStr(formatFileSize(f.size));
-                        setSingleFileTypeStr(detectFileType(f.name));
-                        if (!singleTitle) {
-                          setSingleTitle(f.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '));
-                        }
+                        handleSingleFileSelect(e.target.files[0]);
                       }
                     }}
                   />
 
                   {singleFile ? (
-                    <div className="flex items-center justify-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
-                        <FileText className="w-5 h-5" />
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-1">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                          <FileText className="w-5 h-5" />
+                        </div>
+                        <div className="text-left min-w-0">
+                          <p className="text-xs font-bold text-slate-900 truncate max-w-xs sm:max-w-md">
+                            {singleFile.name}
+                          </p>
+                          <p className="text-[11px] text-slate-500">
+                            {singleFileSizeStr} • Format {singleFileTypeStr}
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-left">
-                        <p className="text-xs font-bold text-slate-900 truncate max-w-sm">
-                          {singleFile.name}
-                        </p>
-                        <p className="text-[11px] text-slate-500">
-                          {singleFileSizeStr} • Format {singleFileTypeStr}
-                        </p>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPreviewRawFile({
+                              name: singleFile.name,
+                              type: singleFileTypeStr,
+                              dataUrl: singleFileDataUrl,
+                              size: singleFileSizeStr,
+                              title: singleTitle || singleFile.name,
+                              category:
+                                categories.find((c) => c.id === singleCategoryId)?.name ||
+                                'Perangkat Pembelajaran',
+                            });
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>Pratinjau Berkas</span>
+                        </button>
+                        <span className="text-[11px] text-slate-500 italic">
+                          (Klik untuk ganti file)
+                        </span>
                       </div>
                     </div>
                   ) : (
@@ -1257,6 +1391,13 @@ export const UploadModal: React.FC<UploadModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Instant Preview Modal for Pre-Upload Inspection */}
+      <FilePreviewModal
+        isOpen={Boolean(previewRawFile)}
+        onClose={() => setPreviewRawFile(null)}
+        rawFile={previewRawFile || undefined}
+      />
     </div>
   );
 };

@@ -28,6 +28,7 @@ interface DocumentListViewProps {
   setSearchQuery: (q: string) => void;
   selectedAcademicYear: string;
   onOpenDocDetail: (doc: CurriculumDoc) => void;
+  onPreviewDoc?: (doc: CurriculumDoc) => void;
   onDownloadDoc: (doc: CurriculumDoc) => void;
   onDeleteDoc: (id: string) => void;
   onOpenUpload: () => void;
@@ -43,6 +44,7 @@ export const DocumentListView: React.FC<DocumentListViewProps> = ({
   setSearchQuery,
   selectedAcademicYear,
   onOpenDocDetail,
+  onPreviewDoc,
   onDownloadDoc,
   onDeleteDoc,
   onOpenUpload,
@@ -562,11 +564,18 @@ export const DocumentListView: React.FC<DocumentListViewProps> = ({
                     <td className="py-3.5 px-4 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1">
                         <button
-                          onClick={() => onOpenDocDetail(doc)}
-                          className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
-                          title="Lihat Detail & Telaah Berkas"
+                          onClick={() => (onPreviewDoc ? onPreviewDoc(doc) : onOpenDocDetail(doc))}
+                          className="p-1.5 text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                          title="Pratinjau Berkas Dokumen"
                         >
                           <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => onOpenDocDetail(doc)}
+                          className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                          title="Lihat Detail & Telaah Berkas"
+                        >
+                          <FileText className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => onDownloadDoc(doc)}
@@ -665,15 +674,22 @@ export const DocumentListView: React.FC<DocumentListViewProps> = ({
 
                 <div className="flex items-center gap-1">
                   <button
-                    onClick={() => onOpenDocDetail(doc)}
-                    className="p-1.5 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg cursor-pointer"
-                    title="Buka Dokumen"
+                    onClick={() => (onPreviewDoc ? onPreviewDoc(doc) : onOpenDocDetail(doc))}
+                    className="p-1.5 text-emerald-700 hover:bg-emerald-50 rounded-lg cursor-pointer transition-colors"
+                    title="Pratinjau Berkas"
                   >
                     <Eye className="w-4 h-4" />
                   </button>
                   <button
+                    onClick={() => onOpenDocDetail(doc)}
+                    className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors"
+                    title="Lihat Detail & Telaah"
+                  >
+                    <FileText className="w-4 h-4" />
+                  </button>
+                  <button
                     onClick={() => onDownloadDoc(doc)}
-                    className="p-1.5 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer"
+                    className="p-1.5 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors"
                     title="Unduh Berkas"
                   >
                     <Download className="w-4 h-4" />

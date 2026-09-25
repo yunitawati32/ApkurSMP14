@@ -61,20 +61,29 @@ export const CategoryManagementView: React.FC<CategoryManagementViewProps> = ({
 
   const getCategoryIcon = (prefix: string) => {
     switch (prefix) {
-      case 'KOSP':
-        return <BookMarked className="w-6 h-6 text-indigo-600" />;
-      case 'MOD':
-        return <FileText className="w-6 h-6 text-blue-600" />;
-      case 'ATP':
-        return <GitMerge className="w-6 h-6 text-emerald-600" />;
-      case 'ASM':
-        return <CheckSquare className="w-6 h-6 text-amber-600" />;
-      case 'PRO':
-        return <CalendarRange className="w-6 h-6 text-purple-600" />;
-      case 'P5':
-        return <Sparkles className="w-6 h-6 text-rose-600" />;
       case 'KAL':
         return <CalendarDays className="w-6 h-6 text-cyan-600" />;
+      case 'RME':
+        return <CalendarRange className="w-6 h-6 text-indigo-600" />;
+      case 'CP':
+        return <CheckSquare className="w-6 h-6 text-blue-600" />;
+      case 'ATP':
+        return <GitMerge className="w-6 h-6 text-emerald-600" />;
+      case 'PROTA':
+      case 'PRO':
+        return <BookMarked className="w-6 h-6 text-amber-600" />;
+      case 'PROMES':
+        return <Layers className="w-6 h-6 text-purple-600" />;
+      case 'KKTP':
+      case 'ASM':
+        return <Award className="w-6 h-6 text-teal-600" />;
+      case 'MOD':
+      case 'RPP':
+        return <FileText className="w-6 h-6 text-rose-600" />;
+      case 'KOSP':
+        return <BookMarked className="w-6 h-6 text-indigo-600" />;
+      case 'P5':
+        return <Sparkles className="w-6 h-6 text-rose-600" />;
       case 'SK':
         return <Award className="w-6 h-6 text-teal-600" />;
       case 'GUR':
@@ -97,15 +106,15 @@ export const CategoryManagementView: React.FC<CategoryManagementViewProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-bold text-slate-900">
-              Sistem Klasifikasi & Kategori Kurikulum
+              Kelengkapan Perangkat Pembelajaran
             </h2>
-            <span className="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 text-xs font-bold font-mono">
-              {categories.length} Kategori
+            <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold font-mono">
+              8 Komponen Standar
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1 max-w-2xl">
-            Struktur taksonomi arsip kurikulum SMPN 14 Tulang Bawang Barat yang dirancang untuk
-            mempermudah penataan berkas, pencarian cepat, serta kesiapan audit akreditasi sekolah.
+            Struktur 8 kategori arsip perangkat ajar guru SMPN 14 Tulang Bawang Barat yang dirancang sesuai
+            standar administrasi Kurikulum Merdeka, telaah supervisi akademik, dan kesiapan akreditasi sekolah.
           </p>
         </div>
 
@@ -202,10 +211,23 @@ export const CategoryManagementView: React.FC<CategoryManagementViewProps> = ({
 
       {/* Category Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {categories.map((cat) => {
+        {categories.map((cat, idx) => {
           const matchingDocs = documents.filter((d) => d.category === cat.name);
           const count = matchingDocs.length;
           const verifiedCount = matchingDocs.filter((d) => d.status === 'Terverifikasi').length;
+
+          const standardOrder = [
+            'kalender-pendidikan',
+            'rincian-minggu-efektif',
+            'capaian-pembelajaran',
+            'alur-tujuan-pembelajaran',
+            'program-tahunan',
+            'program-semester',
+            'kktp',
+            'modul-ajar-rpp',
+          ];
+          const itemIndex = standardOrder.indexOf(cat.id);
+          const itemNum = itemIndex !== -1 ? itemIndex + 1 : idx + 1;
 
           return (
             <div
@@ -214,8 +236,13 @@ export const CategoryManagementView: React.FC<CategoryManagementViewProps> = ({
             >
               <div>
                 <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                    {getCategoryIcon(cat.codePrefix)}
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                      {getCategoryIcon(cat.codePrefix)}
+                    </div>
+                    <span className="font-mono text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold border border-emerald-200">
+                      #{itemNum}
+                    </span>
                   </div>
                   <div className="text-right">
                     <span className="font-mono text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-bold border border-slate-200">
@@ -253,30 +280,48 @@ export const CategoryManagementView: React.FC<CategoryManagementViewProps> = ({
       </div>
 
       {/* Educational Guideline on Taxonomy */}
-      <div className="bg-slate-900 text-slate-200 p-6 rounded-2xl border border-slate-800">
-        <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-2">
+      <div className="bg-slate-900 text-slate-200 p-6 rounded-2xl border border-slate-800 space-y-4">
+        <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider">
           <BookOpen className="w-4 h-4" />
-          <span>Pedoman Penataan Arsip Kurikulum SMPN 14 Tubaba</span>
+          <span>Pedoman 8 Kelengkapan Perangkat Pembelajaran Guru SMPN 14 Tubaba</span>
         </div>
-        <p className="text-xs text-slate-300 leading-relaxed mb-4">
-          Setiap guru mata pelajaran diwajibkan mengunggah berkas administrasi pembelajaran paling lambat
-          minggu kedua awal semester berjalan. Berkas yang diunggah akan melalui proses telaah oleh Wakil
-          Kepala Sekolah Bidang Kurikulum sebelum disahkan Kepala Sekolah untuk kebutuhan supervisi akademik
-          dan pengisian e-Kinerja PMM (Pengelolaan Kinerja Guru).
+        <p className="text-xs text-slate-300 leading-relaxed">
+          Sesuai dengan ketentuan Kurikulum Merdeka dan instrumen supervisi mutu SMPN 14 Tulang Bawang Barat,
+          setiap pendidik diwajibkan melengkapi 8 komponen perangkat pembelajaran pada awal tahun ajaran dan semester:
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-300 pt-3 border-t border-slate-800">
-          <div>
-            <span className="text-emerald-400 font-bold block mb-0.5">1. Standar Format:</span>
-            <span>PDF untuk dokumen final bertanda tangan, Word/Excel untuk rancangan ajar.</span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs text-slate-300 pt-2 border-t border-slate-800">
+          <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
+            <span className="text-emerald-400 font-bold block mb-1">1. Kalender Pendidikan</span>
+            <p className="text-[11px] text-slate-400">Jadwal KBM, pekan efektif, dan libur dinas.</p>
           </div>
-          <div>
-            <span className="text-emerald-400 font-bold block mb-0.5">2. Penomoran Dokumen:</span>
-            <span>Otomatis diberi kode unik sistem (ARK-TAHUN-PREFIKS-NOMOR).</span>
+          <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
+            <span className="text-emerald-400 font-bold block mb-1">2. Rincian Minggu Efektif</span>
+            <p className="text-[11px] text-slate-400">Analisis pekan KBM dan alokasi total JP.</p>
           </div>
-          <div>
-            <span className="text-emerald-400 font-bold block mb-0.5">3. Akreditasi BAN-PDM:</span>
-            <span>Rekapitulasi arsip dapat diekspor langsung dalam format Buku Induk Kurikulum.</span>
+          <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
+            <span className="text-emerald-400 font-bold block mb-1">3. Capaian Pembelajaran (CP)</span>
+            <p className="text-[11px] text-slate-400">Kompetensi dan elemen materi Fase D.</p>
+          </div>
+          <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
+            <span className="text-emerald-400 font-bold block mb-1">4. Alur Tujuan Pembelajaran</span>
+            <p className="text-[11px] text-slate-400">Rangkaian TP yang tersusun logis dan runtut.</p>
+          </div>
+          <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
+            <span className="text-emerald-400 font-bold block mb-1">5. Program Tahunan</span>
+            <p className="text-[11px] text-slate-400">Rencana alokasi waktu satu tahun ajaran.</p>
+          </div>
+          <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
+            <span className="text-emerald-400 font-bold block mb-1">6. Program Semester</span>
+            <p className="text-[11px] text-slate-400">Distribusi materi per pekan tiap semester.</p>
+          </div>
+          <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
+            <span className="text-emerald-400 font-bold block mb-1">7. KKTP</span>
+            <p className="text-[11px] text-slate-400">Kriteria ketercapaian TP dan rubrik asesmen.</p>
+          </div>
+          <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
+            <span className="text-emerald-400 font-bold block mb-1">8. Modul Ajar/RPP</span>
+            <p className="text-[11px] text-slate-400">Rencana aksi KBM berdiferensiasi dan asesmen.</p>
           </div>
         </div>
       </div>
