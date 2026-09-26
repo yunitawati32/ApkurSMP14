@@ -240,12 +240,21 @@ export const getStoredCategories = (): CategoryDef[] => {
   try {
     const data = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
     if (data) {
-      const parsed = JSON.parse(data);
+      const parsed: CategoryDef[] = JSON.parse(data);
       const hasStandard = parsed.some(
         (c: CategoryDef) => c.id === 'rincian-minggu-efektif' || c.id === 'kktp'
       );
-      if (hasStandard && parsed.length > 0) {
+      const hasSumatif = parsed.some((c: CategoryDef) => c.id === 'nilai-mid-semester');
+      if (hasStandard && hasSumatif && parsed.length > 0) {
         return parsed;
+      }
+      if (hasStandard && !hasSumatif) {
+        const merged = [
+          ...parsed,
+          ...INITIAL_CATEGORIES.filter((ic) => !parsed.some((p) => p.id === ic.id)),
+        ];
+        saveStoredCategories(merged);
+        return merged;
       }
     }
   } catch (e) {

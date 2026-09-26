@@ -185,7 +185,8 @@ export function subscribeToCategories(
       const hasStandard = catsList.some(
         (c) => c.id === 'rincian-minggu-efektif' || c.id === 'kktp'
       );
-      if (hasStandard && catsList.length > 0) {
+      const hasSumatif = catsList.some((c) => c.id === 'nilai-mid-semester');
+      if (hasStandard && hasSumatif && catsList.length > 0) {
         const orderMap = new Map(INITIAL_CATEGORIES.map((c, i) => [c.id, i]));
         catsList.sort((a, b) => (orderMap.get(a.id) ?? 99) - (orderMap.get(b.id) ?? 99));
         onUpdate(catsList);

@@ -199,6 +199,49 @@ export const INITIAL_SCHOOL_PROFILE: SchoolProfile = {
   teachers: INITIAL_TEACHERS,
 };
 
+export const SUMATIF_CATEGORIES: CategoryDef[] = [
+  {
+    id: 'nilai-mid-semester',
+    name: 'Nilai Mid Semester',
+    codePrefix: 'MID',
+    iconName: 'FileSpreadsheet',
+    description: 'Rekapitulasi daftar nilai Sumatif Tengah Semester (STS / Mid Semester) peserta didik per mata pelajaran dan kelas.',
+    color: 'text-blue-600',
+    bgLight: 'bg-blue-50 border-blue-200',
+    domain: 'guru',
+  },
+  {
+    id: 'nilai-sas-rapor',
+    name: 'Nilai SAS / Rapor',
+    codePrefix: 'SAS',
+    iconName: 'Award',
+    description: 'Daftar nilai Sumatif Akhir Semester (SAS) serta pengolahan nilai akhir rapor hasil belajar peserta didik.',
+    color: 'text-emerald-600',
+    bgLight: 'bg-emerald-50 border-emerald-200',
+    domain: 'guru',
+  },
+  {
+    id: 'leger',
+    name: 'Leger',
+    codePrefix: 'LGR',
+    iconName: 'Layers',
+    description: 'Buku leger kumpulan nilai seluruh mata pelajaran, ekstrakurikuler, dan rekapitulasi capaian hasil belajar rombel.',
+    color: 'text-amber-600',
+    bgLight: 'bg-amber-50 border-amber-200',
+    domain: 'guru',
+  },
+  {
+    id: 'nilai-ujian-sekolah',
+    name: 'Nilai Ujian Sekolah',
+    codePrefix: 'US',
+    iconName: 'CheckSquare',
+    description: 'Daftar nilai Ujian Sekolah (US / Sumatif Akhir Jenjang) ujian tertulis maupun praktik peserta didik.',
+    color: 'text-purple-600',
+    bgLight: 'bg-purple-50 border-purple-200',
+    domain: 'guru',
+  },
+];
+
 export const INITIAL_CATEGORIES: CategoryDef[] = [
   {
     id: 'kalender-pendidikan',
@@ -280,6 +323,7 @@ export const INITIAL_CATEGORIES: CategoryDef[] = [
     bgLight: 'bg-rose-50 border-rose-200',
     domain: 'kurikulum',
   },
+  ...SUMATIF_CATEGORIES,
 ];
 
 export const SUBJECT_LIST = [

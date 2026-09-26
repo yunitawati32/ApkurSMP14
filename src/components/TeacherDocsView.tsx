@@ -56,6 +56,10 @@ export const TeacherDocsView: React.FC<TeacherDocsViewProps> = ({
     'Program Semester',
     'Kriteria Ketercapaian Tujuan Pembelajaran (KKTP)',
     'Modul Ajar/RPP',
+    'Nilai Mid Semester',
+    'Nilai SAS / Rapor',
+    'Leger',
+    'Nilai Ujian Sekolah',
     'Dokumen & Portofolio Guru',
     'Modul Ajar & RPP',
     'Alur Tujuan Pembelajaran (ATP/CP)',
@@ -207,8 +211,10 @@ export const TeacherDocsView: React.FC<TeacherDocsViewProps> = ({
           !lower.includes('jurnal') &&
           !lower.includes('nilai') &&
           !lower.includes('presensi') &&
+          !lower.includes('leger') &&
           doc.subCategory !== 'Jurnal Mengajar' &&
-          doc.subCategory !== 'Daftar Nilai'
+          doc.subCategory !== 'Daftar Nilai' &&
+          !['Nilai Mid Semester', 'Nilai SAS / Rapor', 'Leger', 'Nilai Ujian Sekolah'].includes(doc.category)
         )
           return false;
       }
@@ -269,6 +275,13 @@ export const TeacherDocsView: React.FC<TeacherDocsViewProps> = ({
             >
               <Plus className="w-4 h-4" />
               Unggah Dokumen Guru
+            </button>
+            <button
+              onClick={() => onOpenUpload('Nilai Sumatif', 'Guru Mapel')}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-lg transition-all cursor-pointer"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              Unggah Nilai Sumatif
             </button>
             <button
               onClick={() => setShowManageTeachers(!showManageTeachers)}

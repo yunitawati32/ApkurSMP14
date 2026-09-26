@@ -80,6 +80,14 @@ export const CategoryManagementView: React.FC<CategoryManagementViewProps> = ({
       case 'MOD':
       case 'RPP':
         return <FileText className="w-6 h-6 text-rose-600" />;
+      case 'MID':
+        return <CalendarRange className="w-6 h-6 text-blue-600" />;
+      case 'SAS':
+        return <Award className="w-6 h-6 text-emerald-600" />;
+      case 'LGR':
+        return <Layers className="w-6 h-6 text-amber-600" />;
+      case 'US':
+        return <CheckSquare className="w-6 h-6 text-purple-600" />;
       case 'KOSP':
         return <BookMarked className="w-6 h-6 text-indigo-600" />;
       case 'P5':
