@@ -13,6 +13,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { AppUser } from '../types/curriculum';
+import { INITIAL_TEACHERS } from '../data/initialData';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -33,53 +34,33 @@ interface DefaultTeacher {
   avatarBg: string;
 }
 
-const DEFAULT_TEACHERS: DefaultTeacher[] = [
-  {
-    name: 'Dra. Yunitawati, M.Pd.',
-    role: 'Wakil Kepala Sekolah Bidang Kurikulum / Verifikator',
-    nip: '19780512 200501 2 008',
-    email: 'yunitawati32@guru.smp.belajar.id',
-    badge: 'Verifikator Kurikulum',
-    badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-    avatarBg: 'bg-emerald-600',
-  },
-  {
-    name: 'Rahmat Hidayat, S.Pd., M.M.',
-    role: 'Kepala Sekolah SMPN 14 Tulang Bawang Barat',
-    nip: '19720315 199802 1 003',
-    email: 'kepala.smpn14@tubaba.sch.id',
-    badge: 'Kepala Sekolah',
-    badgeColor: 'bg-blue-100 text-blue-800 border-blue-200',
-    avatarBg: 'bg-blue-600',
-  },
-  {
-    name: 'Ahmad Fauzi, S.Pd.',
-    role: 'Guru Mata Pelajaran IPA & Koordinator Projek P5',
-    nip: '19840210 201001 1 012',
-    email: 'ahmad.fauzi@guru.smp.belajar.id',
-    badge: 'Guru Mapel / P5',
-    badgeColor: 'bg-amber-100 text-amber-800 border-amber-200',
-    avatarBg: 'bg-amber-600',
-  },
-  {
-    name: 'Siti Rahmawati, S.Pd.',
-    role: 'Guru Bahasa Indonesia & Wali Kelas 7.1',
-    nip: '19890624 201503 2 004',
-    email: 'siti.rahmawati@guru.smp.belajar.id',
-    badge: 'Wali Kelas 7.1',
-    badgeColor: 'bg-purple-100 text-purple-800 border-purple-200',
-    avatarBg: 'bg-purple-600',
-  },
-  {
-    name: 'Budi Santoso, S.Pd.',
-    role: 'Guru PJOK & Pembina Ekstrakurikuler Pramuka',
-    nip: '19910817 201902 1 005',
-    email: 'budi.santoso@guru.smp.belajar.id',
-    badge: 'Pembina Pramuka',
-    badgeColor: 'bg-teal-100 text-teal-800 border-teal-200',
-    avatarBg: 'bg-teal-600',
-  },
+const BADGE_PALETTE = [
+  { badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-200', avatarBg: 'bg-emerald-600' },
+  { badgeColor: 'bg-blue-100 text-blue-800 border-blue-200', avatarBg: 'bg-blue-600' },
+  { badgeColor: 'bg-purple-100 text-purple-800 border-purple-200', avatarBg: 'bg-purple-600' },
+  { badgeColor: 'bg-amber-100 text-amber-800 border-amber-200', avatarBg: 'bg-amber-600' },
+  { badgeColor: 'bg-teal-100 text-teal-800 border-teal-200', avatarBg: 'bg-teal-600' },
 ];
+
+const DEFAULT_TEACHERS: DefaultTeacher[] = INITIAL_TEACHERS.map((t, idx) => {
+  const palette = BADGE_PALETTE[idx % BADGE_PALETTE.length];
+  const emailSlug = t.name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '')
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .join('.');
+  return {
+    name: t.name,
+    role: t.role || `Guru ${t.subject || 'Mata Pelajaran'}`,
+    nip: t.nip || '-',
+    email: `${emailSlug}@guru.smp.belajar.id`,
+    badge: t.role?.split('/')[0]?.trim() || t.subject || 'Guru Mapel',
+    badgeColor: palette.badgeColor,
+    avatarBg: palette.avatarBg,
+  };
+});
 
 export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
@@ -309,7 +290,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                           required
                           value={customName}
                           onChange={(e) => setCustomName(e.target.value)}
-                          placeholder="Contoh: Nurhayati, S.Pd."
+                          placeholder="Contoh: Yunita Wati., S.Pd"
                           className="w-full text-xs p-2 bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:outline-none"
                         />
                       </div>

@@ -41,7 +41,7 @@ import {
   TeacherData,
 } from '../types/curriculum';
 import { SUBJECT_LIST, ACADEMIC_YEARS, INITIAL_TEACHERS } from '../data/initialData';
-import { generateDocCode } from '../utils/storage';
+import { generateDocCode, isLegacyTeacherName, normalizeTeacherName } from '../utils/storage';
 import { saveFileToCache } from '../utils/fileCache';
 import { FilePreviewModal } from './FilePreviewModal';
 
@@ -87,7 +87,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   const [uploadMode, setUploadMode] = useState<'batch' | 'single'>('batch');
 
   // Shared Form Metadata (Diisi 1x untuk semua berkas)
-  const [authorName, setAuthorName] = useState<string>(() => currentUser?.displayName || 'Yunitawati, S.Pd., M.M.');
+  const [authorName, setAuthorName] = useState<string>(() => currentUser?.displayName || 'Yunita Wati., S.Pd');
   const [authorNip, setAuthorNip] = useState<string>(() => currentUser?.nip || '19840618 200903 2 007');
   const [subject, setSubject] = useState<string>('Matematika');
   const [grade, setGrade] = useState<GradeLevel>('Kelas 7');
@@ -107,14 +107,17 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
   // Merged list of teachers for dropdown
   const teacherOptions: TeacherData[] = React.useMemo(() => {
-    const base = teachers.length > 0 ? [...teachers] : [...INITIAL_TEACHERS];
+    const base = (teachers.length > 0 ? [...teachers] : [...INITIAL_TEACHERS]).filter(
+      (t) => t && t.name && !isLegacyTeacherName(t.name)
+    );
     const existingNames = new Set(base.map((t) => t.name.toLowerCase()));
     existingDocs.forEach((d) => {
-      if (d.authorName && !existingNames.has(d.authorName.toLowerCase())) {
-        existingNames.add(d.authorName.toLowerCase());
+      const cleanName = d.authorName ? normalizeTeacherName(d.authorName) : '';
+      if (cleanName && !isLegacyTeacherName(cleanName) && !existingNames.has(cleanName.toLowerCase())) {
+        existingNames.add(cleanName.toLowerCase());
         base.push({
           id: `doc-author-${base.length}`,
-          name: d.authorName,
+          name: cleanName,
           nip: d.authorNip,
           subject: d.subject,
         });
@@ -918,7 +921,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                           rows={3}
                           value={bulkTeacherNames}
                           onChange={(e) => setBulkTeacherNames(e.target.value)}
-                          placeholder={'Ketik atau tempel daftar nama guru (1 nama per baris).\nContoh:\nBudi Santoso, S.Pd. - 199108172019021005\nRatna Sari, M.Pd.'}
+                          placeholder={'Ketik atau tempel daftar nama guru (1 nama per baris).\nContoh:\nYunita Wati., S.Pd\nRohisa., S.Pd'}
                           className="w-full text-xs p-2.5 bg-white border border-emerald-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900"
                         />
                       </div>

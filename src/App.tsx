@@ -38,6 +38,7 @@ import {
   saveStoredSchoolProfile,
   downloadDocumentFile,
   exportDocsToCsv,
+  normalizeTeacherName,
 } from './utils/storage';
 import {
   INITIAL_DOCUMENTS,
@@ -74,7 +75,14 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(() => {
     try {
       const saved = localStorage.getItem('siarkur_active_user');
-      return saved ? JSON.parse(saved) : null;
+      if (saved) {
+        const parsed = JSON.parse(saved) as AppUser;
+        if (parsed.displayName && !parsed.isGoogleAuth) {
+          parsed.displayName = normalizeTeacherName(parsed.displayName);
+        }
+        return parsed;
+      }
+      return null;
     } catch {
       return null;
     }

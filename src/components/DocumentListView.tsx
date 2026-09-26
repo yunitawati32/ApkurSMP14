@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { CurriculumDoc, CategoryDef, SchoolProfile } from '../types/curriculum';
 import { SUBJECT_LIST, INITIAL_TEACHERS } from '../data/initialData';
+import { isLegacyTeacherName } from '../utils/storage';
 
 interface DocumentListViewProps {
   documents: CurriculumDoc[];
@@ -65,14 +66,15 @@ export const DocumentListView: React.FC<DocumentListViewProps> = ({
 
   // Merged teacher options
   const teacherNamesList = useMemo(() => {
-    const master =
+    const master = (
       schoolProfile?.teachers && schoolProfile.teachers.length > 0
         ? schoolProfile.teachers
-        : INITIAL_TEACHERS;
+        : INITIAL_TEACHERS
+    ).filter((t) => t && t.name && !isLegacyTeacherName(t.name));
     return Array.from(
       new Set([
         ...master.map((t) => t.name),
-        ...documents.map((d) => d.authorName),
+        ...documents.map((d) => d.authorName).filter((n) => n && !isLegacyTeacherName(n)),
       ])
     ).filter(Boolean);
   }, [schoolProfile?.teachers, documents]);

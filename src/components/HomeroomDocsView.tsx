@@ -58,18 +58,18 @@ export const HomeroomDocsView: React.FC<HomeroomDocsViewProps> = ({
 
   const classList = [
     { id: 'Semua', name: 'Semua Rombel (12 Kelas)' },
-    { id: 'Kelas 7.1', name: 'Kelas 7.1', wali: 'Ahmad Fauzi, S.Pd.' },
-    { id: 'Kelas 7.2', name: 'Kelas 7.2', wali: 'Rian Pratama, S.Kom.' },
-    { id: 'Kelas 7.3', name: 'Kelas 7.3', wali: 'Siti Rahmawati, S.Pd.' },
-    { id: 'Kelas 7.4', name: 'Kelas 7.4', wali: 'Zulkipli, S.Pd.' },
-    { id: 'Kelas 8.1', name: 'Kelas 8.1', wali: 'Rina Wardani, S.Pd.' },
-    { id: 'Kelas 8.2', name: 'Kelas 8.2', wali: 'Dewi Sartika, S.Si.' },
-    { id: 'Kelas 8.3', name: 'Kelas 8.3', wali: 'Siti Nurhaliza, S.Si.' },
-    { id: 'Kelas 8.4', name: 'Kelas 8.4', wali: 'Dra. Endang Sulastri' },
-    { id: 'Kelas 9.1', name: 'Kelas 9.1', wali: 'Nurul Hidayah, S.Pd.' },
-    { id: 'Kelas 9.2', name: 'Kelas 9.2', wali: 'Bambang Irawan, S.Pd.' },
-    { id: 'Kelas 9.3', name: 'Kelas 9.3', wali: 'Siti Aminah, S.Pd.' },
-    { id: 'Kelas 9.4', name: 'Kelas 9.4', wali: 'Roni Hendrawan, S.Pd.' },
+    { id: 'Kelas 7.1', name: 'Kelas 7.1', wali: 'Rohisa., S.Pd' },
+    { id: 'Kelas 7.2', name: 'Kelas 7.2', wali: 'Siti Halimah., S.Pd' },
+    { id: 'Kelas 7.3', name: 'Kelas 7.3', wali: 'Candra Mustika., S.Pd' },
+    { id: 'Kelas 7.4', name: 'Kelas 7.4', wali: 'Agustina Jayanti., S.Pd' },
+    { id: 'Kelas 8.1', name: 'Kelas 8.1', wali: 'Eti Inrayuni., S.Pd' },
+    { id: 'Kelas 8.2', name: 'Kelas 8.2', wali: 'Ria Siti Nur Hasanah., S.Pd' },
+    { id: 'Kelas 8.3', name: 'Kelas 8.3', wali: 'Siti Romelah., S.Pd' },
+    { id: 'Kelas 8.4', name: 'Kelas 8.4', wali: 'Julita Dewi., S.Pd' },
+    { id: 'Kelas 9.1', name: 'Kelas 9.1', wali: 'Herlina., S.Pd' },
+    { id: 'Kelas 9.2', name: 'Kelas 9.2', wali: 'Rahadian Abdurroziq., S.Pd' },
+    { id: 'Kelas 9.3', name: 'Kelas 9.3', wali: 'Lupi Novita., S.Pd' },
+    { id: 'Kelas 9.4', name: 'Kelas 9.4', wali: 'Jenius Aritonang., S.Pd' },
   ];
 
   const filteredDocs = homeroomDocs.filter((doc) => {

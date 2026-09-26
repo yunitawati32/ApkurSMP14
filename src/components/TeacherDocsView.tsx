@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { CurriculumDoc, DocStatus, SchoolProfile, TeacherData } from '../types/curriculum';
 import { SUBJECT_LIST, INITIAL_TEACHERS } from '../data/initialData';
+import { isLegacyTeacherName } from '../utils/storage';
 
 interface TeacherDocsViewProps {
   documents: CurriculumDoc[];
@@ -86,16 +87,17 @@ export const TeacherDocsView: React.FC<TeacherDocsViewProps> = ({
   const [newRole, setNewRole] = useState<string>('Guru Mata Pelajaran');
   const [bulkInput, setBulkInput] = useState<string>('');
 
-  const masterTeachers: TeacherData[] =
+  const masterTeachers: TeacherData[] = (
     schoolProfile.teachers && schoolProfile.teachers.length > 0
       ? schoolProfile.teachers
-      : INITIAL_TEACHERS;
+      : INITIAL_TEACHERS
+  ).filter((t) => t && t.name && !isLegacyTeacherName(t.name));
 
   // Extract unique teachers from both master list and uploaded docs
   const teachersList = Array.from(
     new Set([
       ...masterTeachers.map((t) => t.name),
-      ...teacherDocs.map((d) => d.authorName),
+      ...teacherDocs.map((d) => d.authorName).filter((n) => n && !isLegacyTeacherName(n)),
     ])
   ).filter(Boolean);
 
@@ -367,7 +369,7 @@ export const TeacherDocsView: React.FC<TeacherDocsViewProps> = ({
                     required
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
-                    placeholder="Contoh: Hendra Wijaya, S.Pd."
+                    placeholder="Contoh: Yunita Wati., S.Pd"
                     className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900"
                   />
                 </div>
@@ -422,7 +424,7 @@ export const TeacherDocsView: React.FC<TeacherDocsViewProps> = ({
                   required
                   value={bulkInput}
                   onChange={(e) => setBulkInput(e.target.value)}
-                  placeholder={'Contoh:\nHendra Wijaya, S.Pd. - 19850412 201001 1 008\nLestari Handayani, M.Pd.\nDedi Kurniawan, S.Kom.'}
+                  placeholder={'Contoh:\nYunita Wati., S.Pd\nRohisa., S.Pd\nSiti Halimah., S.Pd'}
                   className="w-full text-xs p-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900"
                 />
               </div>

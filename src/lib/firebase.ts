@@ -26,7 +26,7 @@ import {
   INITIAL_CATEGORIES,
   INITIAL_SCHOOL_PROFILE,
 } from '../data/initialData';
-import { normalizeDocCategory, normalizeCurriculumDoc } from '../utils/storage';
+import { normalizeDocCategory, normalizeCurriculumDoc, normalizeSchoolProfile } from '../utils/storage';
 
 // Initialize Firebase App with support for both config file and Vercel Environment Variables
 const resolvedConfig = {
@@ -229,14 +229,7 @@ export function subscribeToSchoolProfile(
     (snapshot) => {
       if (snapshot.exists()) {
         const cloudData = snapshot.data() as SchoolProfile;
-        onUpdate({
-          ...INITIAL_SCHOOL_PROFILE,
-          ...cloudData,
-          teachers:
-            Array.isArray(cloudData.teachers) && cloudData.teachers.length > 0
-              ? cloudData.teachers
-              : INITIAL_SCHOOL_PROFILE.teachers,
-        });
+        onUpdate(normalizeSchoolProfile(cloudData));
       }
     },
     (error) => {
@@ -365,25 +358,45 @@ export async function syncAcademicYearToCloud(): Promise<void> {
         data.academicYear !== normalized.academicYear ||
         data.title !== normalized.title ||
         data.grade !== normalized.grade ||
-        data.targetRole !== normalized.targetRole
+        data.targetRole !== normalized.targetRole ||
+        data.authorName !== normalized.authorName ||
+        data.verifiedBy !== normalized.verifiedBy
       ) {
         batch.set(d.ref, sanitizeDocForFirestore(normalized));
         count++;
       }
     });
 
-    // Seed any newly added extracurricular sample docs if not yet in cloud
+    // Seed any newly added extracurricular or mulok potensi daerah sample docs if not yet in cloud
     INITIAL_DOCUMENTS.forEach((initDoc) => {
-      if (initDoc.id.startsWith('doc-eskul-') && !existingIds.has(initDoc.id)) {
+      if (
+        (initDoc.id.startsWith('doc-eskul-') || initDoc.id === 'doc-mulok-potensi') &&
+        !existingIds.has(initDoc.id)
+      ) {
         const docRef = doc(db, COLLECTIONS.DOCS, initDoc.id);
         batch.set(docRef, sanitizeDocForFirestore(initDoc));
         count++;
       }
     });
 
+    // Also ensure school_profile in cloud has the 25 official teachers & updated names
+    const schoolSnap = await getDocs(collection(db, COLLECTIONS.SCHOOL));
+    schoolSnap.forEach((sd) => {
+      const rawProfile = sd.data() as SchoolProfile;
+      const normalizedProf = normalizeSchoolProfile(rawProfile);
+      if (
+        rawProfile.headmaster !== normalizedProf.headmaster ||
+        rawProfile.curriculumVice !== normalizedProf.curriculumVice ||
+        JSON.stringify(rawProfile.teachers) !== JSON.stringify(normalizedProf.teachers)
+      ) {
+        batch.set(sd.ref, normalizedProf);
+        count++;
+      }
+    });
+
     if (count > 0) {
       await batch.commit();
-      console.log(`Berhasil menyinkronkan ${count} berkas cloud ke struktur kelas & eskul terbaru`);
+      console.log(`Berhasil menyinkronkan ${count} berkas & profil guru cloud ke daftar 25 guru terbaru`);
     }
   } catch (err) {
     console.warn('Sync academic year to cloud warning:', err);

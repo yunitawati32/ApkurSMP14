@@ -30,6 +30,7 @@ import {
   INITIAL_TEACHERS,
   SUBJECT_LIST,
 } from '../data/initialData';
+import { isLegacyTeacherName } from '../utils/storage';
 import {
   optimizeImageFile,
   DEFAULT_PEMDA_LOGO_SVG,
@@ -68,8 +69,9 @@ export const SchoolProfileView: React.FC<SchoolProfileViewProps> = ({
   const [teacherRole, setTeacherRole] = useState<string>('Guru Mata Pelajaran');
   const [bulkTeachersInput, setBulkTeachersInput] = useState<string>('');
 
-  const currentTeachers: TeacherData[] =
-    profile.teachers && profile.teachers.length > 0 ? profile.teachers : INITIAL_TEACHERS;
+  const currentTeachers: TeacherData[] = (
+    profile.teachers && profile.teachers.length > 0 ? profile.teachers : INITIAL_TEACHERS
+  ).filter((t) => t && t.name && !isLegacyTeacherName(t.name));
 
   const handleAddTeacher = (e: React.FormEvent) => {
     e.preventDefault();
@@ -916,7 +918,7 @@ export const SchoolProfileView: React.FC<SchoolProfileViewProps> = ({
                   required
                   value={teacherName}
                   onChange={(e) => setTeacherName(e.target.value)}
-                  placeholder="Contoh: Hendra Wijaya, S.Pd."
+                  placeholder="Contoh: Yunita Wati., S.Pd"
                   className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900"
                 />
               </div>
@@ -971,7 +973,7 @@ export const SchoolProfileView: React.FC<SchoolProfileViewProps> = ({
                 required
                 value={bulkTeachersInput}
                 onChange={(e) => setBulkTeachersInput(e.target.value)}
-                placeholder={'Contoh:\nHendra Wijaya, S.Pd. - 19850412 201001 1 008\nLestari Handayani, M.Pd.\nDedi Kurniawan, S.Kom.'}
+                placeholder={'Contoh:\nYunita Wati., S.Pd\nRohisa., S.Pd\nSiti Halimah., S.Pd'}
                 className="w-full text-xs p-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900"
               />
             </div>

@@ -76,12 +76,12 @@ export const ExtracurricularDocsView: React.FC<ExtracurricularDocsViewProps> = (
 
   const eskulList = [
     { id: 'Semua', name: 'Semua Eskul' },
-    { id: 'UKS', name: 'UKS', pembina: 'Siti Aminah, S.Pd.' },
-    { id: 'Pramuka', name: 'Pramuka', pembina: 'Bambang Irawan, S.Pd.' },
-    { id: 'OSIS', name: 'OSIS', pembina: 'Rian Pratama, S.Kom.' },
-    { id: 'ROHIS', name: 'ROHIS', pembina: 'Ahmad Fauzi, S.Pd.' },
-    { id: 'SENI TARI', name: 'SENI TARI', pembina: 'Ratih Kusuma, S.Sn.' },
-    { id: 'OLAH RAGA', name: 'OLAH RAGA', pembina: 'Roni Hendrawan, S.Pd.' },
+    { id: 'UKS', name: 'UKS', pembina: 'Enik Ernawati., S.Pd' },
+    { id: 'Pramuka', name: 'Pramuka', pembina: 'Affan Yusuf., S.Pd' },
+    { id: 'OSIS', name: 'OSIS', pembina: 'Ratih Ernawati., S.Kom' },
+    { id: 'ROHIS', name: 'ROHIS', pembina: 'Rike Kurniatika., S.PdI' },
+    { id: 'SENI TARI', name: 'SENI TARI', pembina: 'Herlina., S.Pd' },
+    { id: 'OLAH RAGA', name: 'OLAH RAGA', pembina: 'Rahadian Abdurroziq., S.Pd' },
   ];
 
   const filteredDocs = eskulDocs.filter((doc) => {

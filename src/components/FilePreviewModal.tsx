@@ -1036,7 +1036,7 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
                     </div>
                   </div>
                   <p className="font-extrabold text-slate-900 underline">
-                    {schoolProfile?.headmaster || 'Drs. Supriyanto, M.Pd.'}
+                    {schoolProfile?.headmaster || 'Cecep Agung Prehatin., M.Pd'}
                   </p>
                   <p className="text-[11px] font-mono text-slate-500">
                     NIP. {schoolProfile?.headmasterNip || '19750812 200212 1 003'}

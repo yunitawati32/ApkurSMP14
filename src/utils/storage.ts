@@ -1,5 +1,135 @@
-import { CurriculumDoc, CategoryDef, SchoolProfile } from '../types/curriculum';
-import { INITIAL_CATEGORIES, INITIAL_DOCUMENTS, INITIAL_SCHOOL_PROFILE } from '../data/initialData';
+import { CurriculumDoc, CategoryDef, SchoolProfile, TeacherData } from '../types/curriculum';
+import {
+  INITIAL_CATEGORIES,
+  INITIAL_DOCUMENTS,
+  INITIAL_SCHOOL_PROFILE,
+  INITIAL_TEACHERS,
+} from '../data/initialData';
+
+const LEGACY_TEACHER_MAP: Record<string, string> = {
+  'yunitawati, s.pd., m.m.': 'Yunita Wati., S.Pd',
+  'yunitawati, s.pd., m.m': 'Yunita Wati., S.Pd',
+  'dra. yunitawati, m.pd.': 'Yunita Wati., S.Pd',
+  'dra. yunitawati, m.pd': 'Yunita Wati., S.Pd',
+  'tim kurikulum smpn 14 tubaba': 'Yunita Wati., S.Pd',
+  'drs. h. mulyadi, m.pd.': 'Cecep Agung Prehatin., M.Pd',
+  'drs. h. mulyadi, m.pd': 'Cecep Agung Prehatin., M.Pd',
+  'rahmat hidayat, s.pd., m.m.': 'Cecep Agung Prehatin., M.Pd',
+  'rahmat hidayat, s.pd., m.m': 'Cecep Agung Prehatin., M.Pd',
+  'drs. supriyanto, m.pd.': 'Cecep Agung Prehatin., M.Pd',
+  'drs. supriyanto, m.pd': 'Cecep Agung Prehatin., M.Pd',
+  'tata usaha smpn 14 tubaba': 'Cecep Agung Prehatin., M.Pd',
+  'ahmad fauzi': 'Rohisa., S.Pd',
+  'ahmad fauzi, s.pd': 'Rohisa., S.Pd',
+  'ahmad fauzi, s.pd.': 'Rohisa., S.Pd',
+  'ahmad fauzi, m.pd': 'Candra Mustika., S.Pd',
+  'ahmad fauzi, m.pd.': 'Candra Mustika., S.Pd',
+  'rian pratama, s.kom': 'Ratih Ernawati., S.Kom',
+  'rian pratama, s.kom.': 'Ratih Ernawati., S.Kom',
+  'rian pratama, s.kom. (proktor)': 'Ratih Ernawati., S.Kom',
+  'siti rahmawati, s.pd': 'Siti Halimah., S.Pd',
+  'siti rahmawati, s.pd.': 'Siti Halimah., S.Pd',
+  'zulkipli, s.pd': 'Frestin Rosdian Putri., S.Pd',
+  'zulkipli, s.pd.': 'Frestin Rosdian Putri., S.Pd',
+  'rina wardani': 'Agustina Jayanti., S.Pd',
+  'rina wardani, s.pd': 'Agustina Jayanti., S.Pd',
+  'rina wardani, s.pd.': 'Agustina Jayanti., S.Pd',
+  'dewi sartika, s.si': 'Julita Dewi., S.Pd',
+  'dewi sartika, s.si.': 'Julita Dewi., S.Pd',
+  'siti nurhaliza, s.si': 'Siti Halimah., S.Pd',
+  'siti nurhaliza, s.si.': 'Siti Halimah., S.Pd',
+  'dra. endang sulastri': 'Siti Romelah., S.Pd',
+  'nurul hidayah, s.pd': 'Herlina., S.Pd',
+  'nurul hidayah, s.pd.': 'Herlina., S.Pd',
+  'bambang irawan, s.pd': 'Affan Yusuf., S.Pd',
+  'bambang irawan, s.pd.': 'Affan Yusuf., S.Pd',
+  'budi santoso, s.pd': 'Affan Yusuf., S.Pd',
+  'budi santoso, s.pd.': 'Affan Yusuf., S.Pd',
+  'siti aminah, s.pd': 'Enik Ernawati., S.Pd',
+  'siti aminah, s.pd.': 'Enik Ernawati., S.Pd',
+  'roni hendrawan, s.pd': 'Rahadian Abdurroziq., S.Pd',
+  'roni hendrawan, s.pd.': 'Rahadian Abdurroziq., S.Pd',
+  'ratih kusuma, s.sn': 'Herlina., S.Pd',
+  'ratih kusuma, s.sn.': 'Herlina., S.Pd',
+  'tim fasilitator p5 smpn 14': 'Eka Reza Rifai., S.Pd',
+};
+
+const LEGACY_SUBSTRINGS: Array<{ pattern: string; replacement: string }> = [
+  { pattern: 'ahmad fauzi', replacement: 'Rohisa., S.Pd' },
+  { pattern: 'rina wardani', replacement: 'Agustina Jayanti., S.Pd' },
+  { pattern: 'siti rahmawati', replacement: 'Siti Halimah., S.Pd' },
+  { pattern: 'budi santoso', replacement: 'Affan Yusuf., S.Pd' },
+  { pattern: 'dewi sartika', replacement: 'Julita Dewi., S.Pd' },
+  { pattern: 'rian pratama', replacement: 'Ratih Ernawati., S.Kom' },
+  { pattern: 'zulkipli', replacement: 'Frestin Rosdian Putri., S.Pd' },
+  { pattern: 'siti nurhaliza', replacement: 'Siti Halimah., S.Pd' },
+  { pattern: 'endang sulastri', replacement: 'Siti Romelah., S.Pd' },
+  { pattern: 'nurul hidayah', replacement: 'Herlina., S.Pd' },
+  { pattern: 'bambang irawan', replacement: 'Affan Yusuf., S.Pd' },
+  { pattern: 'siti aminah', replacement: 'Enik Ernawati., S.Pd' },
+  { pattern: 'roni hendrawan', replacement: 'Rahadian Abdurroziq., S.Pd' },
+  { pattern: 'ratih kusuma', replacement: 'Herlina., S.Pd' },
+  { pattern: 'rahmat hidayat', replacement: 'Cecep Agung Prehatin., M.Pd' },
+  { pattern: 'mulyadi', replacement: 'Cecep Agung Prehatin., M.Pd' },
+  { pattern: 'supriyanto', replacement: 'Cecep Agung Prehatin., M.Pd' },
+  { pattern: 'yunitawati', replacement: 'Yunita Wati., S.Pd' },
+];
+
+export const isLegacyTeacherName = (name?: string): boolean => {
+  if (!name) return false;
+  const lower = name.trim().toLowerCase();
+  if (LEGACY_TEACHER_MAP[lower]) return true;
+  return LEGACY_SUBSTRINGS.some((item) => lower.includes(item.pattern));
+};
+
+export const normalizeTeacherName = (name?: string): string => {
+  if (!name) return 'Yunita Wati., S.Pd';
+  const trimmed = name.trim();
+  const lower = trimmed.toLowerCase();
+  if (LEGACY_TEACHER_MAP[lower]) {
+    return LEGACY_TEACHER_MAP[lower];
+  }
+  const foundSub = LEGACY_SUBSTRINGS.find((item) => lower.includes(item.pattern));
+  if (foundSub) {
+    return foundSub.replacement;
+  }
+  return trimmed;
+};
+
+export const normalizeTeachersArray = (storedTeachers?: TeacherData[]): TeacherData[] => {
+  if (!Array.isArray(storedTeachers) || storedTeachers.length === 0) {
+    return INITIAL_TEACHERS;
+  }
+
+  // Filter out any old legacy teachers
+  const nonLegacy = storedTeachers.filter((t) => t && t.name && !isLegacyTeacherName(t.name));
+
+  // Ensure all 25 official teachers from INITIAL_TEACHERS are present
+  const officialNamesLower = new Set(INITIAL_TEACHERS.map((t) => t.name.toLowerCase()));
+  const customAdded = nonLegacy.filter((t) => !officialNamesLower.has(t.name.trim().toLowerCase()));
+
+  return [...INITIAL_TEACHERS, ...customAdded];
+};
+
+export const normalizeSchoolProfile = (profile?: Partial<SchoolProfile>): SchoolProfile => {
+  if (!profile) return INITIAL_SCHOOL_PROFILE;
+  const rawHeadmaster = profile.headmaster || INITIAL_SCHOOL_PROFILE.headmaster;
+  const rawVice = profile.curriculumVice || INITIAL_SCHOOL_PROFILE.curriculumVice;
+
+  return {
+    ...INITIAL_SCHOOL_PROFILE,
+    ...profile,
+    headmaster: isLegacyTeacherName(rawHeadmaster)
+      ? INITIAL_SCHOOL_PROFILE.headmaster
+      : rawHeadmaster,
+    curriculumVice: isLegacyTeacherName(rawVice)
+      ? INITIAL_SCHOOL_PROFILE.curriculumVice
+      : rawVice,
+    logoPemdaUrl: profile.logoPemdaUrl || INITIAL_SCHOOL_PROFILE.logoPemdaUrl,
+    logoSchoolUrl: profile.logoSchoolUrl || INITIAL_SCHOOL_PROFILE.logoSchoolUrl,
+    teachers: normalizeTeachersArray(profile.teachers),
+  };
+};
 
 export const normalizeDocCategory = (categoryName: string): string => {
   const map: Record<string, string> = {
@@ -69,6 +199,8 @@ export const normalizeCurriculumDoc = (d: CurriculumDoc): CurriculumDoc => {
     title: normalizeClassAndEskulText(d.title),
     targetRole: normalizedTargetRole,
     grade: normalizedGrade,
+    authorName: normalizeTeacherName(d.authorName),
+    verifiedBy: d.verifiedBy ? normalizeTeacherName(d.verifiedBy) : d.verifiedBy,
     description: d.description ? normalizeClassAndEskulText(d.description) : d.description,
     tags: Array.isArray(d.tags) ? d.tags.map((t) => normalizeClassAndEskulText(t)) : [],
   };
@@ -136,16 +268,7 @@ export const getStoredSchoolProfile = (): SchoolProfile => {
     const data = localStorage.getItem(STORAGE_KEYS.SCHOOL);
     if (data) {
       const parsed = JSON.parse(data);
-      return {
-        ...INITIAL_SCHOOL_PROFILE,
-        ...parsed,
-        logoPemdaUrl: parsed.logoPemdaUrl || INITIAL_SCHOOL_PROFILE.logoPemdaUrl,
-        logoSchoolUrl: parsed.logoSchoolUrl || INITIAL_SCHOOL_PROFILE.logoSchoolUrl,
-        teachers:
-          Array.isArray(parsed.teachers) && parsed.teachers.length > 0
-            ? parsed.teachers
-            : INITIAL_SCHOOL_PROFILE.teachers,
-      };
+      return normalizeSchoolProfile(parsed);
     }
   } catch (e) {
     console.error('Error loading school profile', e);
