@@ -38,8 +38,9 @@ import {
   CurriculumModel,
   DocStatus,
   AppUser,
+  TeacherData,
 } from '../types/curriculum';
-import { SUBJECT_LIST, ACADEMIC_YEARS } from '../data/initialData';
+import { SUBJECT_LIST, ACADEMIC_YEARS, INITIAL_TEACHERS } from '../data/initialData';
 import { generateDocCode } from '../utils/storage';
 import { saveFileToCache } from '../utils/fileCache';
 import { FilePreviewModal } from './FilePreviewModal';
@@ -53,6 +54,8 @@ interface UploadModalProps {
   defaultCategoryName?: string;
   defaultTargetRole?: string;
   currentUser?: AppUser | null;
+  teachers?: TeacherData[];
+  onUpdateTeachers?: (updatedTeachers: TeacherData[], message?: string) => void;
   onSuccess: (newDoc: CurriculumDoc | CurriculumDoc[]) => void;
 }
 
@@ -76,14 +79,16 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   defaultCategoryName,
   defaultTargetRole,
   currentUser,
+  teachers = INITIAL_TEACHERS,
+  onUpdateTeachers,
   onSuccess,
 }) => {
   // Mode: 'batch' (multi-kategori sekaligus) or 'single' (berkas satuan)
   const [uploadMode, setUploadMode] = useState<'batch' | 'single'>('batch');
 
   // Shared Form Metadata (Diisi 1x untuk semua berkas)
-  const [authorName, setAuthorName] = useState<string>(() => currentUser?.displayName || 'Dra. Yunitawati, M.Pd.');
-  const [authorNip, setAuthorNip] = useState<string>(() => currentUser?.nip || '19780512 200501 2 008');
+  const [authorName, setAuthorName] = useState<string>(() => currentUser?.displayName || 'Yunitawati, S.Pd., M.M.');
+  const [authorNip, setAuthorNip] = useState<string>(() => currentUser?.nip || '19840618 200903 2 007');
   const [subject, setSubject] = useState<string>('Matematika');
   const [grade, setGrade] = useState<GradeLevel>('Kelas 7');
   const [academicYear, setAcademicYear] = useState<string>(defaultAcademicYear || '2026/2027');
@@ -91,6 +96,116 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   const [curriculumType, setCurriculumType] = useState<CurriculumModel>('Kurikulum Merdeka');
   const [initialStatus, setInitialStatus] = useState<DocStatus>('Menunggu Verifikasi');
   const [tagInput, setTagInput] = useState<string>('Kurikulum Merdeka, SMPN 14 Tubaba');
+
+  // Add New Teacher to Dropdown State
+  const [isAddingTeacher, setIsAddingTeacher] = useState<boolean>(false);
+  const [newTeacherMode, setNewTeacherMode] = useState<'single' | 'bulk'>('single');
+  const [newTeacherName, setNewTeacherName] = useState<string>('');
+  const [newTeacherNip, setNewTeacherNip] = useState<string>('');
+  const [newTeacherSubject, setNewTeacherSubject] = useState<string>('Matematika');
+  const [bulkTeacherNames, setBulkTeacherNames] = useState<string>('');
+
+  // Merged list of teachers for dropdown
+  const teacherOptions: TeacherData[] = React.useMemo(() => {
+    const base = teachers.length > 0 ? [...teachers] : [...INITIAL_TEACHERS];
+    const existingNames = new Set(base.map((t) => t.name.toLowerCase()));
+    existingDocs.forEach((d) => {
+      if (d.authorName && !existingNames.has(d.authorName.toLowerCase())) {
+        existingNames.add(d.authorName.toLowerCase());
+        base.push({
+          id: `doc-author-${base.length}`,
+          name: d.authorName,
+          nip: d.authorNip,
+          subject: d.subject,
+        });
+      }
+    });
+    return base;
+  }, [teachers, existingDocs]);
+
+  const handleSelectTeacherFromDropdown = (val: string) => {
+    if (val === '__ADD_NEW__') {
+      setIsAddingTeacher(true);
+      return;
+    }
+    setAuthorName(val);
+    const found = teacherOptions.find((t) => t.name === val);
+    if (found) {
+      if (found.nip) setAuthorNip(found.nip);
+      if (found.subject && SUBJECT_LIST.includes(found.subject) && found.subject !== 'Semua Mata Pelajaran') {
+        setSubject(found.subject);
+      }
+    }
+  };
+
+  const handleSaveNewTeacher = () => {
+    const currentList = teachers.length > 0 ? [...teachers] : [...INITIAL_TEACHERS];
+
+    if (newTeacherMode === 'single') {
+      const trimmedName = newTeacherName.trim();
+      if (!trimmedName) return;
+
+      const newEntry: TeacherData = {
+        id: `t-${Date.now()}`,
+        name: trimmedName,
+        nip: newTeacherNip.trim() || undefined,
+        subject: newTeacherSubject,
+        role: `Guru ${newTeacherSubject}`,
+      };
+
+      const filtered = currentList.filter((t) => t.name.toLowerCase() !== trimmedName.toLowerCase());
+      const updated = [newEntry, ...filtered];
+      if (onUpdateTeachers) {
+        onUpdateTeachers(updated, `Nama guru "${trimmedName}" berhasil ditambahkan ke dropdown!`);
+      }
+      setAuthorName(trimmedName);
+      if (newTeacherNip.trim()) setAuthorNip(newTeacherNip.trim());
+      if (newTeacherSubject) setSubject(newTeacherSubject);
+      setNewTeacherName('');
+      setNewTeacherNip('');
+      setIsAddingTeacher(false);
+    } else {
+      const lines = bulkTeacherNames
+        .split('\n')
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0);
+      if (lines.length === 0) return;
+
+      const newEntries: TeacherData[] = [];
+      const existingLower = new Set(currentList.map((t) => t.name.toLowerCase()));
+
+      lines.forEach((line, idx) => {
+        // Support format: "Nama Guru - NIP" or just "Nama Guru"
+        const parts = line.split(/\s+-\s+|\t|\|/);
+        const namePart = parts[0]?.trim();
+        const nipPart = parts[1]?.trim();
+        if (namePart && !existingLower.has(namePart.toLowerCase())) {
+          existingLower.add(namePart.toLowerCase());
+          newEntries.push({
+            id: `t-${Date.now()}-${idx}`,
+            name: namePart,
+            nip: nipPart || undefined,
+            subject: subject,
+            role: 'Guru Mata Pelajaran',
+          });
+        }
+      });
+
+      if (newEntries.length > 0) {
+        const updated = [...newEntries, ...currentList];
+        if (onUpdateTeachers) {
+          onUpdateTeachers(
+            updated,
+            `Berhasil menambahkan ${newEntries.length} nama guru baru ke dalam dropdown!`
+          );
+        }
+        setAuthorName(newEntries[0].name);
+        if (newEntries[0].nip) setAuthorNip(newEntries[0].nip);
+      }
+      setBulkTeacherNames('');
+      setIsAddingTeacher(false);
+    }
+  };
 
   // Multi-Category Slots State (Map of categoryId -> CategoryFileSlot)
   const [categorySlots, setCategorySlots] = useState<Record<string, CategoryFileSlot>>({});
@@ -697,19 +812,137 @@ export const UploadModal: React.FC<UploadModalProps> = ({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {/* Nama Guru */}
+              {/* Nama Guru (Dropdown + Input/Tambah Baru) */}
               <div className="sm:col-span-2">
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  Nama Guru / Penanggung Jawab <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={authorName}
-                  onChange={(e) => setAuthorName(e.target.value)}
-                  placeholder="Contoh: Yunitawati, S.Pd., M.M."
-                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 text-slate-900"
-                />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[11px] font-bold text-slate-700">
+                    Pilih Nama Guru / Penanggung Jawab <span className="text-rose-500">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingTeacher(!isAddingTeacher)}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-lg border border-emerald-200 transition-colors cursor-pointer"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>{isAddingTeacher ? 'Tutup Form Guru' : 'Tambah Nama Guru ke Dropdown'}</span>
+                  </button>
+                </div>
+
+                <div className="flex gap-2">
+                  <select
+                    value={teacherOptions.some((t) => t.name === authorName) ? authorName : '__CUSTOM__'}
+                    onChange={(e) => {
+                      if (e.target.value === '__CUSTOM__') return;
+                      handleSelectTeacherFromDropdown(e.target.value);
+                    }}
+                    aria-label="Pilih Nama Guru dari Dropdown"
+                    className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 text-slate-900 font-semibold"
+                  >
+                    {teacherOptions.map((t) => (
+                      <option key={t.id} value={t.name}>
+                        {t.name} {t.subject ? `(${t.subject})` : ''}
+                      </option>
+                    ))}
+                    {!teacherOptions.some((t) => t.name === authorName) && authorName && (
+                      <option value="__CUSTOM__">{authorName} (Ketik Manual)</option>
+                    )}
+                    <option value="__ADD_NEW__">+ Tambah Nama Guru Baru ke Dropdown...</option>
+                  </select>
+                </div>
+
+                {/* Inline Add Teacher to Dropdown Form */}
+                {isAddingTeacher && (
+                  <div className="mt-2.5 p-3.5 rounded-xl bg-emerald-50/90 border border-emerald-200 space-y-2.5 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-emerald-900 flex items-center gap-1.5">
+                        <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                        Masukkan Nama Guru Baru ke Daftar Dropdown
+                      </span>
+                      <div className="flex items-center gap-1 bg-white p-0.5 rounded-lg border border-emerald-200 text-[10px]">
+                        <button
+                          type="button"
+                          onClick={() => setNewTeacherMode('single')}
+                          className={`px-2 py-0.5 rounded-md font-bold cursor-pointer ${
+                            newTeacherMode === 'single'
+                              ? 'bg-emerald-600 text-white'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          1 Guru
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNewTeacherMode('bulk')}
+                          className={`px-2 py-0.5 rounded-md font-bold cursor-pointer ${
+                            newTeacherMode === 'bulk'
+                              ? 'bg-emerald-600 text-white'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          Banyak Sekaligus
+                        </button>
+                      </div>
+                    </div>
+
+                    {newTeacherMode === 'single' ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <input
+                          type="text"
+                          value={newTeacherName}
+                          onChange={(e) => setNewTeacherName(e.target.value)}
+                          placeholder="Nama Lengkap & Gelar Guru *"
+                          className="sm:col-span-1 text-xs px-2.5 py-1.5 bg-white border border-emerald-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900"
+                        />
+                        <input
+                          type="text"
+                          value={newTeacherNip}
+                          onChange={(e) => setNewTeacherNip(e.target.value)}
+                          placeholder="NIP (Opsional)"
+                          className="text-xs px-2.5 py-1.5 bg-white border border-emerald-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 font-mono"
+                        />
+                        <select
+                          value={newTeacherSubject}
+                          onChange={(e) => setNewTeacherSubject(e.target.value)}
+                          className="text-xs px-2.5 py-1.5 bg-white border border-emerald-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800"
+                        >
+                          {SUBJECT_LIST.filter((s) => s !== 'Semua Mata Pelajaran').map((s) => (
+                            <option key={s} value={s}>
+                              {s}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : (
+                      <div>
+                        <textarea
+                          rows={3}
+                          value={bulkTeacherNames}
+                          onChange={(e) => setBulkTeacherNames(e.target.value)}
+                          placeholder={'Ketik atau tempel daftar nama guru (1 nama per baris).\nContoh:\nBudi Santoso, S.Pd. - 199108172019021005\nRatna Sari, M.Pd.'}
+                          className="w-full text-xs p-2.5 bg-white border border-emerald-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900"
+                        />
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingTeacher(false)}
+                        className="px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:bg-white rounded-lg cursor-pointer"
+                      >
+                        Batal
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSaveNewTeacher}
+                        className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg shadow-2xs cursor-pointer flex items-center gap-1"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Simpan ke Dropdown & Pilih</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* NIP Guru */}
@@ -747,18 +980,38 @@ export const UploadModal: React.FC<UploadModalProps> = ({
               {/* Tingkat / Kelas */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  Tingkat / Jenjang Kelas
+                  Tingkat / Rombel Kelas
                 </label>
                 <select
                   value={grade}
                   onChange={(e) => setGrade(e.target.value as GradeLevel)}
                   className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 text-slate-800"
                 >
-                  <option value="Kelas 7">Kelas 7</option>
-                  <option value="Kelas 8">Kelas 8</option>
-                  <option value="Kelas 9">Kelas 9</option>
-                  <option value="Fase D">Fase D (Lintas Jenjang)</option>
-                  <option value="Semua Tingkat">Semua Tingkat</option>
+                  <optgroup label="Tingkat Umum">
+                    <option value="Kelas 7">Kelas 7 (Semua Rombel 7)</option>
+                    <option value="Kelas 8">Kelas 8 (Semua Rombel 8)</option>
+                    <option value="Kelas 9">Kelas 9 (Semua Rombel 9)</option>
+                    <option value="Fase D">Fase D (Lintas Jenjang)</option>
+                    <option value="Semua Tingkat">Semua Tingkat</option>
+                  </optgroup>
+                  <optgroup label="Rombel Kelas 7">
+                    <option value="Kelas 7.1">Kelas 7.1</option>
+                    <option value="Kelas 7.2">Kelas 7.2</option>
+                    <option value="Kelas 7.3">Kelas 7.3</option>
+                    <option value="Kelas 7.4">Kelas 7.4</option>
+                  </optgroup>
+                  <optgroup label="Rombel Kelas 8">
+                    <option value="Kelas 8.1">Kelas 8.1</option>
+                    <option value="Kelas 8.2">Kelas 8.2</option>
+                    <option value="Kelas 8.3">Kelas 8.3</option>
+                    <option value="Kelas 8.4">Kelas 8.4</option>
+                  </optgroup>
+                  <optgroup label="Rombel Kelas 9">
+                    <option value="Kelas 9.1">Kelas 9.1</option>
+                    <option value="Kelas 9.2">Kelas 9.2</option>
+                    <option value="Kelas 9.3">Kelas 9.3</option>
+                    <option value="Kelas 9.4">Kelas 9.4</option>
+                  </optgroup>
                 </select>
               </div>
 

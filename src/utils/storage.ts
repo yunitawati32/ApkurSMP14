@@ -27,6 +27,53 @@ export const normalizeDocAcademicYear = (year?: string): string => {
   return year;
 };
 
+export const normalizeClassAndEskulText = (text?: string): string => {
+  if (!text) return '';
+  return text
+    .replace(/2024\/2025/g, '2026/2027')
+    .replace(/Kelas\s*7-A/gi, 'Kelas 7.1')
+    .replace(/Kelas\s*7-B/gi, 'Kelas 7.2')
+    .replace(/Kelas\s*7-C/gi, 'Kelas 7.3')
+    .replace(/Kelas\s*7-D/gi, 'Kelas 7.4')
+    .replace(/Kelas\s*8-A/gi, 'Kelas 8.1')
+    .replace(/Kelas\s*8-B/gi, 'Kelas 8.2')
+    .replace(/Kelas\s*8-C/gi, 'Kelas 8.3')
+    .replace(/Kelas\s*8-D/gi, 'Kelas 8.4')
+    .replace(/Kelas\s*9-A/gi, 'Kelas 9.1')
+    .replace(/Kelas\s*9-B/gi, 'Kelas 9.2')
+    .replace(/Kelas\s*9-C/gi, 'Kelas 9.3')
+    .replace(/Kelas\s*9-D/gi, 'Kelas 9.4')
+    .replace(/\b7-A\b/g, '7.1')
+    .replace(/\b7-B\b/g, '7.2')
+    .replace(/\b8-A\b/g, '8.1')
+    .replace(/\b8-B\b/g, '8.2')
+    .replace(/\b9-A\b/g, '9.1')
+    .replace(/\b9-B\b/g, '9.2')
+    .replace(/Palang Merah Remaja \(PMR\) Madya/gi, 'UKS (Usaha Kesehatan Sekolah)')
+    .replace(/Pembina PMR/gi, 'Pembina UKS')
+    .replace(/PMR Madya/gi, 'UKS');
+};
+
+export const normalizeCurriculumDoc = (d: CurriculumDoc): CurriculumDoc => {
+  const normalizedTargetRole = d.targetRole ? normalizeClassAndEskulText(d.targetRole) : d.targetRole;
+  let normalizedGrade = d.grade;
+  if (normalizedTargetRole?.includes('7.1')) normalizedGrade = 'Kelas 7.1';
+  else if (normalizedTargetRole?.includes('7.2')) normalizedGrade = 'Kelas 7.2';
+  else if (normalizedTargetRole?.includes('8.2')) normalizedGrade = 'Kelas 8.2';
+  else if (normalizedTargetRole?.includes('9.1')) normalizedGrade = 'Kelas 9.1';
+
+  return {
+    ...d,
+    category: normalizeDocCategory(d.category),
+    academicYear: normalizeDocAcademicYear(d.academicYear),
+    title: normalizeClassAndEskulText(d.title),
+    targetRole: normalizedTargetRole,
+    grade: normalizedGrade,
+    description: d.description ? normalizeClassAndEskulText(d.description) : d.description,
+    tags: Array.isArray(d.tags) ? d.tags.map((t) => normalizeClassAndEskulText(t)) : [],
+  };
+};
+
 const STORAGE_KEYS = {
   DOCS: 'siarkur_docs_v4',
   CATEGORIES: 'siarkur_categories_v3',
@@ -41,12 +88,7 @@ export const getStoredDocs = (): CurriculumDoc[] => {
       localStorage.getItem('siarkur_docs_v2');
     if (data) {
       const parsed: CurriculumDoc[] = JSON.parse(data);
-      return parsed.map((d) => ({
-        ...d,
-        category: normalizeDocCategory(d.category),
-        academicYear: normalizeDocAcademicYear(d.academicYear),
-        title: d.title ? d.title.replace(/2024\/2025/g, '2026/2027') : d.title,
-      }));
+      return parsed.map((d) => normalizeCurriculumDoc(d));
     }
   } catch (e) {
     console.error('Error loading stored docs', e);
@@ -99,6 +141,10 @@ export const getStoredSchoolProfile = (): SchoolProfile => {
         ...parsed,
         logoPemdaUrl: parsed.logoPemdaUrl || INITIAL_SCHOOL_PROFILE.logoPemdaUrl,
         logoSchoolUrl: parsed.logoSchoolUrl || INITIAL_SCHOOL_PROFILE.logoSchoolUrl,
+        teachers:
+          Array.isArray(parsed.teachers) && parsed.teachers.length > 0
+            ? parsed.teachers
+            : INITIAL_SCHOOL_PROFILE.teachers,
       };
     }
   } catch (e) {

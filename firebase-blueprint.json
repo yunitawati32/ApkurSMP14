@@ -70,7 +70,8 @@
         "curriculumViceNip": { "type": "string", "maxLength": 50 },
         "motto": { "type": "string", "maxLength": 255 },
         "email": { "type": "string", "maxLength": 100 },
-        "phone": { "type": "string", "maxLength": 50 }
+        "phone": { "type": "string", "maxLength": 50 },
+        "teachers": { "type": "array", "description": "Daftar nama guru dan tenaga pendidik untuk dropdown" }
       },
       "required": ["name", "npsn", "headmaster", "curriculumVice"]
     }

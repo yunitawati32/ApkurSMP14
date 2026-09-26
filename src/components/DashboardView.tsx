@@ -16,6 +16,7 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { CurriculumDoc, CategoryDef, SchoolProfile, ActiveTab } from '../types/curriculum';
+import { UploadTrendChart } from './UploadTrendChart';
 
 interface DashboardViewProps {
   documents: CurriculumDoc[];
@@ -87,7 +88,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       d.category === 'Dokumen Pembina Ekstrakurikuler' ||
       d.targetRole?.toLowerCase().includes('pembina') ||
       d.tags?.some((t) =>
-        ['Pramuka', 'PMR', 'Eskul', 'Paskibra', 'Futsal', 'Tari Tradisional', 'Prestasi', 'Gudep'].includes(t)
+        [
+          'UKS',
+          'Pramuka',
+          'OSIS',
+          'ROHIS',
+          'SENI TARI',
+          'OLAH RAGA',
+          'Eskul',
+          'Tari Tradisional',
+          'Prestasi',
+          'Gudep',
+          'Jurnal Eskul',
+          'Program Kerja Eskul',
+        ].includes(t)
       )
   ).length;
 
@@ -188,7 +202,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* 2. Empat Pintu Masuk Utama (Role Gateways) */}
+      {/* 2. Visualisasi Tren Unggahan Dokumen Per Bulan (Recharts) */}
+      <UploadTrendChart
+        documents={documents}
+        selectedAcademicYear={selectedAcademicYear}
+        onOpenDocDetail={onOpenDocDetail}
+        onDownloadDoc={onDownloadDoc}
+      />
+
+      {/* 3. Empat Pintu Masuk Utama (Role Gateways) */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <div>
@@ -244,10 +266,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </span>
               </div>
               <h3 className="text-sm font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">
-                Dokumen Wali Kelas
+                Dokumen Wali Kelas (12 Kelas)
               </h3>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Administrasi Kelas, Leger Nilai, Buku Catatan Kasus, dan Kunjungan Rumah (Home Visit).
+                Administrasi 12 Rombel (7.1–7.4, 8.1–8.4, 9.1–9.4), Leger Nilai, Buku Kasus & Home Visit.
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-emerald-600 font-semibold group-hover:translate-x-0.5 transition-transform">
@@ -274,7 +296,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 Dokumen Pembina Eskul
               </h3>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Program Kerja Pramuka, PMR, Rohis, Paskibra, Jurnal Latihan & Sertifikat Prestasi.
+                Program Kerja UKS, Pramuka, OSIS, ROHIS, SENI TARI, OLAH RAGA & Piagam Prestasi.
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-amber-600 font-semibold group-hover:translate-x-0.5 transition-transform">

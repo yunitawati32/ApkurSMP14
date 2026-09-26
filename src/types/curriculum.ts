@@ -1,4 +1,21 @@
-export type GradeLevel = 'Kelas 7' | 'Kelas 8' | 'Kelas 9' | 'Semua Tingkat' | 'Fase D';
+export type GradeLevel =
+  | 'Kelas 7'
+  | 'Kelas 7.1'
+  | 'Kelas 7.2'
+  | 'Kelas 7.3'
+  | 'Kelas 7.4'
+  | 'Kelas 8'
+  | 'Kelas 8.1'
+  | 'Kelas 8.2'
+  | 'Kelas 8.3'
+  | 'Kelas 8.4'
+  | 'Kelas 9'
+  | 'Kelas 9.1'
+  | 'Kelas 9.2'
+  | 'Kelas 9.3'
+  | 'Kelas 9.4'
+  | 'Semua Tingkat'
+  | 'Fase D';
 
 export type SemesterType = 'Ganjil' | 'Genap' | 'Tahunan / Penuh';
 
@@ -55,6 +72,14 @@ export interface CategoryDef {
   domain?: ArchiveDomain;
 }
 
+export interface TeacherData {
+  id: string;
+  name: string;
+  nip?: string;
+  subject?: string;
+  role?: string;
+}
+
 export interface SchoolProfile {
   name: string;
   npsn: string;
@@ -72,6 +97,7 @@ export interface SchoolProfile {
   phone: string;
   logoSchoolUrl?: string; // Base64 data-URL atau link logo sekolah
   logoPemdaUrl?: string;  // Base64 data-URL atau link logo Pemda Tubaba
+  teachers?: TeacherData[]; // Daftar nama guru untuk dropdown
 }
 
 export interface AppUser {

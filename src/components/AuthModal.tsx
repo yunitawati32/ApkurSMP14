@@ -63,10 +63,10 @@ const DEFAULT_TEACHERS: DefaultTeacher[] = [
   },
   {
     name: 'Siti Rahmawati, S.Pd.',
-    role: 'Guru Bahasa Indonesia & Wali Kelas 7-A',
+    role: 'Guru Bahasa Indonesia & Wali Kelas 7.1',
     nip: '19890624 201503 2 004',
     email: 'siti.rahmawati@guru.smp.belajar.id',
-    badge: 'Wali Kelas 7-A',
+    badge: 'Wali Kelas 7.1',
     badgeColor: 'bg-purple-100 text-purple-800 border-purple-200',
     avatarBg: 'bg-purple-600',
   },

@@ -48,7 +48,23 @@ export const ExtracurricularDocsView: React.FC<ExtracurricularDocsViewProps> = (
       d.category === 'Dokumen Pembina Ekstrakurikuler' ||
       d.targetRole?.toLowerCase().includes('pembina') ||
       d.tags?.some((t) =>
-        ['Pramuka', 'PMR', 'Eskul', 'Paskibra', 'Futsal', 'Tari Tradisional', 'Prestasi', 'Gudep'].includes(t)
+        [
+          'UKS',
+          'Pramuka',
+          'OSIS',
+          'ROHIS',
+          'SENI TARI',
+          'OLAH RAGA',
+          'Eskul',
+          'Rohis',
+          'Seni Tari',
+          'Olahraga',
+          'Tari Tradisional',
+          'Prestasi',
+          'Gudep',
+          'Jurnal Eskul',
+          'Program Kerja Eskul',
+        ].includes(t)
       )
   );
 
@@ -60,20 +76,27 @@ export const ExtracurricularDocsView: React.FC<ExtracurricularDocsViewProps> = (
 
   const eskulList = [
     { id: 'Semua', name: 'Semua Eskul' },
-    { id: 'Pramuka', name: 'Pramuka Gudep 14', pembina: 'Bambang Irawan, S.Pd.' },
-    { id: 'PMR', name: 'PMR Madya Unit 14', pembina: 'Siti Aminah, S.Pd.' },
-    { id: 'Rohis', name: 'Rohis & BTQ', pembina: 'Ahmad Fauzi, S.Pd.' },
-    { id: 'Paskibra', name: 'Paskibraka Satuan', pembina: 'Rian Pratama, S.Kom.' },
-    { id: 'Seni', name: 'Seni Tari Lampung', pembina: 'Ratih Kusuma, S.Sn.' },
-    { id: 'Olahraga', name: 'Futsal & Atletik', pembina: 'Roni Hendrawan, S.Pd.' },
+    { id: 'UKS', name: 'UKS', pembina: 'Siti Aminah, S.Pd.' },
+    { id: 'Pramuka', name: 'Pramuka', pembina: 'Bambang Irawan, S.Pd.' },
+    { id: 'OSIS', name: 'OSIS', pembina: 'Rian Pratama, S.Kom.' },
+    { id: 'ROHIS', name: 'ROHIS', pembina: 'Ahmad Fauzi, S.Pd.' },
+    { id: 'SENI TARI', name: 'SENI TARI', pembina: 'Ratih Kusuma, S.Sn.' },
+    { id: 'OLAH RAGA', name: 'OLAH RAGA', pembina: 'Roni Hendrawan, S.Pd.' },
   ];
 
   const filteredDocs = eskulDocs.filter((doc) => {
     // Filter Eskul
     if (selectedEskul !== 'Semua') {
-      const matchRole = doc.targetRole?.toLowerCase().includes(selectedEskul.toLowerCase());
-      const matchTitle = doc.title.toLowerCase().includes(selectedEskul.toLowerCase());
-      const matchTags = doc.tags?.some((t) => t.toLowerCase().includes(selectedEskul.toLowerCase()));
+      const targetLower = selectedEskul.toLowerCase();
+      const altTarget = targetLower.replace(/\s+/g, ''); // e.g. 'olahraga' for 'olah raga'
+      const roleLower = (doc.targetRole || '').toLowerCase();
+      const titleLower = doc.title.toLowerCase();
+      const matchRole = roleLower.includes(targetLower) || roleLower.replace(/\s+/g, '').includes(altTarget);
+      const matchTitle = titleLower.includes(targetLower) || titleLower.replace(/\s+/g, '').includes(altTarget);
+      const matchTags = doc.tags?.some((t) => {
+        const tl = t.toLowerCase();
+        return tl.includes(targetLower) || tl.replace(/\s+/g, '').includes(altTarget);
+      });
       if (!matchRole && !matchTitle && !matchTags) return false;
     }
 
@@ -136,14 +159,19 @@ export const ExtracurricularDocsView: React.FC<ExtracurricularDocsViewProps> = (
               Dokumen Pembina Ekstrakurikuler
             </h1>
             <p className="text-xs sm:text-sm text-amber-100/80 leading-relaxed">
-              Arsip resmi program kerja pembina Pramuka Gudep 14, PMR Madya, Rohis/BTQ, Paskibra,
-              Seni Tari Lampung, Futsal, proposal kegiatan kemah, LPJ, serta arsip piagam prestasi lomba.
+              Arsip resmi program kerja pembina UKS, Pramuka, OSIS, ROHIS, SENI TARI, dan OLAH RAGA,
+              jurnal kegiatan rutin, proposal lomba, LPJ, serta arsip piagam prestasi siswa.
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <button
-              onClick={() => onOpenUpload('Dokumen Pembina Ekstrakurikuler', 'Pembina Eskul')}
+              onClick={() =>
+                onOpenUpload(
+                  'Dokumen Pembina Ekstrakurikuler',
+                  selectedEskul !== 'Semua' ? `Pembina ${selectedEskul}` : 'Pembina Eskul'
+                )
+              }
               className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-lg transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
@@ -169,8 +197,8 @@ export const ExtracurricularDocsView: React.FC<ExtracurricularDocsViewProps> = (
           </div>
           <div className="bg-white/5 backdrop-blur-xs rounded-xl p-3 border border-white/10">
             <span className="text-[11px] text-amber-200 block">Ekstrakurikuler Aktif</span>
-            <span className="text-xl font-bold font-mono text-amber-300">6 Unit</span>
-            <span className="text-[10px] text-amber-200/70 block">Pramuka s.d Futsal</span>
+            <span className="text-xl font-bold font-mono text-amber-300">6 Bidang</span>
+            <span className="text-[10px] text-amber-200/70 block">UKS, Pramuka, OSIS, ROHIS, Seni Tari, Olahraga</span>
           </div>
           <div className="bg-white/5 backdrop-blur-xs rounded-xl p-3 border border-white/10">
             <span className="text-[11px] text-amber-200 block">Prestasi & Piagam</span>

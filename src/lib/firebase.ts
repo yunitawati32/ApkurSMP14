@@ -26,7 +26,7 @@ import {
   INITIAL_CATEGORIES,
   INITIAL_SCHOOL_PROFILE,
 } from '../data/initialData';
-import { normalizeDocCategory } from '../utils/storage';
+import { normalizeDocCategory, normalizeCurriculumDoc } from '../utils/storage';
 
 // Initialize Firebase App with support for both config file and Vercel Environment Variables
 const resolvedConfig = {
@@ -157,14 +157,7 @@ export function subscribeToCurriculumDocs(
       const docsList: CurriculumDoc[] = [];
       snapshot.forEach((d) => {
         const raw = d.data() as CurriculumDoc;
-        const normalizedYear = (raw.academicYear === '2024/2025' || !raw.academicYear) ? '2026/2027' : raw.academicYear;
-        const normalizedTitle = raw.title ? raw.title.replace(/2024\/2025/g, '2026/2027') : raw.title;
-        docsList.push({
-          ...raw,
-          category: normalizeDocCategory(raw.category),
-          academicYear: normalizedYear,
-          title: normalizedTitle,
-        });
+        docsList.push(normalizeCurriculumDoc(raw));
       });
       // Sort newest first
       docsList.sort((a, b) => (b.uploadDate || '').localeCompare(a.uploadDate || ''));
@@ -235,7 +228,15 @@ export function subscribeToSchoolProfile(
     docRef,
     (snapshot) => {
       if (snapshot.exists()) {
-        onUpdate(snapshot.data() as SchoolProfile);
+        const cloudData = snapshot.data() as SchoolProfile;
+        onUpdate({
+          ...INITIAL_SCHOOL_PROFILE,
+          ...cloudData,
+          teachers:
+            Array.isArray(cloudData.teachers) && cloudData.teachers.length > 0
+              ? cloudData.teachers
+              : INITIAL_SCHOOL_PROFILE.teachers,
+        });
       }
     },
     (error) => {
@@ -354,19 +355,35 @@ export async function syncAcademicYearToCloud(): Promise<void> {
     if (snap.empty) return;
     const batch = writeBatch(db);
     let count = 0;
+    const existingIds = new Set<string>();
+
     snap.forEach((d) => {
+      existingIds.add(d.id);
       const data = d.data() as CurriculumDoc;
-      if (data.academicYear === '2024/2025' || (data.title && data.title.includes('2024/2025'))) {
-        batch.update(d.ref, {
-          academicYear: '2026/2027',
-          title: data.title ? data.title.replace(/2024\/2025/g, '2026/2027') : data.title,
-        });
+      const normalized = normalizeCurriculumDoc(data);
+      if (
+        data.academicYear !== normalized.academicYear ||
+        data.title !== normalized.title ||
+        data.grade !== normalized.grade ||
+        data.targetRole !== normalized.targetRole
+      ) {
+        batch.set(d.ref, sanitizeDocForFirestore(normalized));
         count++;
       }
     });
+
+    // Seed any newly added extracurricular sample docs if not yet in cloud
+    INITIAL_DOCUMENTS.forEach((initDoc) => {
+      if (initDoc.id.startsWith('doc-eskul-') && !existingIds.has(initDoc.id)) {
+        const docRef = doc(db, COLLECTIONS.DOCS, initDoc.id);
+        batch.set(docRef, sanitizeDocForFirestore(initDoc));
+        count++;
+      }
+    });
+
     if (count > 0) {
       await batch.commit();
-      console.log(`Berhasil menyinkronkan ${count} berkas cloud ke tahun ajaran 2026/2027`);
+      console.log(`Berhasil menyinkronkan ${count} berkas cloud ke struktur kelas & eskul terbaru`);
     }
   } catch (err) {
     console.warn('Sync academic year to cloud warning:', err);

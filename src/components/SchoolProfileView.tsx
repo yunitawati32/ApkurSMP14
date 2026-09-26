@@ -19,9 +19,17 @@ import {
   Sparkles,
   Eye,
   FileCheck,
+  Plus,
+  Users,
 } from 'lucide-react';
-import { SchoolProfile, CurriculumDoc, CategoryDef } from '../types/curriculum';
-import { INITIAL_DOCUMENTS, INITIAL_CATEGORIES, INITIAL_SCHOOL_PROFILE } from '../data/initialData';
+import { SchoolProfile, CurriculumDoc, CategoryDef, TeacherData } from '../types/curriculum';
+import {
+  INITIAL_DOCUMENTS,
+  INITIAL_CATEGORIES,
+  INITIAL_SCHOOL_PROFILE,
+  INITIAL_TEACHERS,
+  SUBJECT_LIST,
+} from '../data/initialData';
 import {
   optimizeImageFile,
   DEFAULT_PEMDA_LOGO_SVG,
@@ -51,6 +59,88 @@ export const SchoolProfileView: React.FC<SchoolProfileViewProps> = ({
   const [logoNotification, setLogoNotification] = useState<string | null>(null);
   const [isUploadingPemda, setIsUploadingPemda] = useState<boolean>(false);
   const [isUploadingSchool, setIsUploadingSchool] = useState<boolean>(false);
+
+  // Teacher dropdown list management
+  const [addMode, setAddMode] = useState<'single' | 'bulk'>('single');
+  const [teacherName, setTeacherName] = useState<string>('');
+  const [teacherNip, setTeacherNip] = useState<string>('');
+  const [teacherSubject, setTeacherSubject] = useState<string>('Matematika');
+  const [teacherRole, setTeacherRole] = useState<string>('Guru Mata Pelajaran');
+  const [bulkTeachersInput, setBulkTeachersInput] = useState<string>('');
+
+  const currentTeachers: TeacherData[] =
+    profile.teachers && profile.teachers.length > 0 ? profile.teachers : INITIAL_TEACHERS;
+
+  const handleAddTeacher = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (addMode === 'single') {
+      const trimmed = teacherName.trim();
+      if (!trimmed) return;
+      const newEntry: TeacherData = {
+        id: `t-${Date.now()}`,
+        name: trimmed,
+        nip: teacherNip.trim() || undefined,
+        subject: teacherSubject,
+        role: teacherRole.trim() || `Guru ${teacherSubject}`,
+      };
+      const filtered = currentTeachers.filter((t) => t.name.toLowerCase() !== trimmed.toLowerCase());
+      const updatedProfile: SchoolProfile = {
+        ...profile,
+        teachers: [newEntry, ...filtered],
+      };
+      setFormData(updatedProfile);
+      onUpdateProfile(updatedProfile);
+      showNotification(`Nama guru "${trimmed}" berhasil ditambahkan ke dropdown!`);
+      setTeacherName('');
+      setTeacherNip('');
+    } else {
+      const lines = bulkTeachersInput
+        .split('\n')
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0);
+      if (lines.length === 0) return;
+
+      const existingLower = new Set(currentTeachers.map((t) => t.name.toLowerCase()));
+      const newEntries: TeacherData[] = [];
+
+      lines.forEach((line, idx) => {
+        const parts = line.split(/\s+-\s+|\t|\|/);
+        const namePart = parts[0]?.trim();
+        const nipPart = parts[1]?.trim();
+        if (namePart && !existingLower.has(namePart.toLowerCase())) {
+          existingLower.add(namePart.toLowerCase());
+          newEntries.push({
+            id: `t-${Date.now()}-${idx}`,
+            name: namePart,
+            nip: nipPart || undefined,
+            subject: 'Umum / Satuan Pendidikan',
+            role: 'Guru Mata Pelajaran',
+          });
+        }
+      });
+
+      if (newEntries.length > 0) {
+        const updatedProfile: SchoolProfile = {
+          ...profile,
+          teachers: [...newEntries, ...currentTeachers],
+        };
+        setFormData(updatedProfile);
+        onUpdateProfile(updatedProfile);
+        showNotification(`Berhasil menambahkan ${newEntries.length} nama guru ke dropdown!`);
+      }
+      setBulkTeachersInput('');
+    }
+  };
+
+  const handleDeleteTeacher = (id: string, name: string) => {
+    const updatedProfile: SchoolProfile = {
+      ...profile,
+      teachers: currentTeachers.filter((t) => t.id !== id),
+    };
+    setFormData(updatedProfile);
+    onUpdateProfile(updatedProfile);
+    showNotification(`Nama guru "${name}" dihapus dari daftar dropdown.`);
+  };
 
   const pemdaFileInputRef = useRef<HTMLInputElement>(null);
   const schoolFileInputRef = useRef<HTMLInputElement>(null);
@@ -770,6 +860,165 @@ export const SchoolProfileView: React.FC<SchoolProfileViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* Daftar Nama Guru & Tenaga Pendidik (Master Dropdown) */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+              <Users className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">
+                Daftar Nama Guru & Tenaga Pendidik (Master Dropdown Guru)
+              </h3>
+              <p className="text-xs text-slate-500">
+                Masukkan nama guru di sini agar otomatis muncul di pilihan dropdown saat unggah berkas maupun pencarian dokumen.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setAddMode('single')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                addMode === 'single'
+                  ? 'bg-white text-emerald-700 shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Input 1 Guru
+            </button>
+            <button
+              type="button"
+              onClick={() => setAddMode('bulk')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                addMode === 'bulk'
+                  ? 'bg-white text-emerald-700 shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Input Banyak Nama Sekaligus
+            </button>
+          </div>
+        </div>
+
+        <form onSubmit={handleAddTeacher} className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-200/80 space-y-3">
+          {addMode === 'single' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Nama Lengkap & Gelar Guru <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={teacherName}
+                  onChange={(e) => setTeacherName(e.target.value)}
+                  placeholder="Contoh: Hendra Wijaya, S.Pd."
+                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  NIP Guru (Opsional)
+                </label>
+                <input
+                  type="text"
+                  value={teacherNip}
+                  onChange={(e) => setTeacherNip(e.target.value)}
+                  placeholder="Contoh: 19850412 201001 1 008"
+                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Mata Pelajaran Utama
+                </label>
+                <select
+                  value={teacherSubject}
+                  onChange={(e) => setTeacherSubject(e.target.value)}
+                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800"
+                >
+                  {SUBJECT_LIST.filter((s) => s !== 'Semua Mata Pelajaran').map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Jabatan / Tugas Tambahan
+                </label>
+                <input
+                  type="text"
+                  value={teacherRole}
+                  onChange={(e) => setTeacherRole(e.target.value)}
+                  placeholder="Contoh: Wali Kelas 7.1"
+                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900"
+                />
+              </div>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                Ketik / Tempel Daftar Nama Guru (1 Nama per Baris) <span className="text-rose-500">*</span>
+              </label>
+              <textarea
+                rows={4}
+                required
+                value={bulkTeachersInput}
+                onChange={(e) => setBulkTeachersInput(e.target.value)}
+                placeholder={'Contoh:\nHendra Wijaya, S.Pd. - 19850412 201001 1 008\nLestari Handayani, M.Pd.\nDedi Kurniawan, S.Kom.'}
+                className="w-full text-xs p-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900"
+              />
+            </div>
+          )}
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Tambahkan ke Dropdown Guru</span>
+            </button>
+          </div>
+        </form>
+
+        <div>
+          <div className="flex items-center justify-between mb-2.5">
+            <span className="text-xs font-bold text-slate-700">
+              Daftar Guru Saat Ini ({currentTeachers.length} Guru Terdaftar)
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-72 overflow-y-auto pr-1">
+            {currentTeachers.map((t) => (
+              <div
+                key={t.id}
+                className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2 hover:border-emerald-300 transition-colors"
+              >
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-slate-900 truncate">{t.name}</p>
+                  <p className="text-[11px] text-slate-500 truncate">
+                    {t.subject || 'Guru Mapel'} {t.nip ? `• NIP. ${t.nip}` : ''}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteTeacher(t.id, t.name)}
+                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer shrink-0"
+                  title={`Hapus ${t.name}`}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* Backup & Data Management Card */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">

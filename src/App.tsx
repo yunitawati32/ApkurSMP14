@@ -27,6 +27,7 @@ import {
   ActiveTab,
   DocStatus,
   AppUser,
+  TeacherData,
 } from './types/curriculum';
 import {
   getStoredDocs,
@@ -301,7 +302,20 @@ export default function App() {
     saveSchoolProfileToCloud(newProfile).catch((err) => {
       console.error('Failed to sync school profile to cloud:', err);
     });
-    showToast('Profil sekolah & logo berhasil diperbarui dan disinkronkan ke Cloud!');
+    showToast('Profil sekolah & data berhasil diperbarui dan disinkronkan ke Cloud!');
+  };
+
+  const handleUpdateTeachers = (updatedTeachers: TeacherData[], message?: string) => {
+    const newProfile: SchoolProfile = {
+      ...schoolProfile,
+      teachers: updatedTeachers,
+    };
+    setSchoolProfile(newProfile);
+    saveStoredSchoolProfile(newProfile);
+    saveSchoolProfileToCloud(newProfile).catch((err) => {
+      console.error('Failed to sync teachers list to cloud:', err);
+    });
+    showToast(message || 'Daftar nama guru pada dropdown berhasil diperbarui!');
   };
 
   const handleResetData = () => {
@@ -401,7 +415,20 @@ export default function App() {
       d.category === 'Dokumen Pembina Ekstrakurikuler' ||
       d.targetRole?.toLowerCase().includes('pembina') ||
       d.tags?.some((t) =>
-        ['Pramuka', 'PMR', 'Eskul', 'Paskibra', 'Futsal', 'Tari Tradisional', 'Prestasi', 'Gudep'].includes(t)
+        [
+          'UKS',
+          'Pramuka',
+          'OSIS',
+          'ROHIS',
+          'SENI TARI',
+          'OLAH RAGA',
+          'Eskul',
+          'Tari Tradisional',
+          'Prestasi',
+          'Gudep',
+          'Jurnal Eskul',
+          'Program Kerja Eskul',
+        ].includes(t)
       )
   ).length;
 
@@ -522,6 +549,7 @@ export default function App() {
             <DocumentListView
               documents={documents}
               categories={categories}
+              schoolProfile={schoolProfile}
               selectedCategory={selectedCategory}
               setSelectedCategory={setSelectedCategory}
               searchQuery={searchQuery}
@@ -546,6 +574,7 @@ export default function App() {
               onDownloadDoc={handleDownloadDocument}
               onOpenUpload={(cat, role) => handleOpenUploadWithPreset(cat, role)}
               onUpdateStatus={handleUpdateDocStatus}
+              onUpdateTeachers={handleUpdateTeachers}
             />
           )}
 
@@ -644,6 +673,8 @@ export default function App() {
         defaultCategoryName={uploadCategory}
         defaultTargetRole={uploadRole}
         currentUser={currentUser}
+        teachers={schoolProfile.teachers || []}
+        onUpdateTeachers={handleUpdateTeachers}
         onSuccess={handleAddNewDocument}
       />
 

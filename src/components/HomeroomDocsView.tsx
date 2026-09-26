@@ -57,22 +57,30 @@ export const HomeroomDocsView: React.FC<HomeroomDocsViewProps> = ({
   const [showChecklistGuide, setShowChecklistGuide] = useState<boolean>(false);
 
   const classList = [
-    { id: 'Semua', name: 'Semua Rombel' },
-    { id: 'Kelas 7-A', name: 'Kelas 7-A', wali: 'Ahmad Fauzi, S.Pd.' },
-    { id: 'Kelas 7-B', name: 'Kelas 7-B', wali: 'Rian Pratama, S.Kom.' },
-    { id: 'Kelas 8-A', name: 'Kelas 8-A', wali: 'Rina Wardani, S.Pd.' },
-    { id: 'Kelas 8-B', name: 'Kelas 8-B', wali: 'Dewi Sartika, S.Si.' },
-    { id: 'Kelas 9-A', name: 'Kelas 9-A', wali: 'Nurul Hidayah, S.Pd.' },
-    { id: 'Kelas 9-B', name: 'Kelas 9-B', wali: 'Bambang Irawan, S.Pd.' },
+    { id: 'Semua', name: 'Semua Rombel (12 Kelas)' },
+    { id: 'Kelas 7.1', name: 'Kelas 7.1', wali: 'Ahmad Fauzi, S.Pd.' },
+    { id: 'Kelas 7.2', name: 'Kelas 7.2', wali: 'Rian Pratama, S.Kom.' },
+    { id: 'Kelas 7.3', name: 'Kelas 7.3', wali: 'Siti Rahmawati, S.Pd.' },
+    { id: 'Kelas 7.4', name: 'Kelas 7.4', wali: 'Zulkipli, S.Pd.' },
+    { id: 'Kelas 8.1', name: 'Kelas 8.1', wali: 'Rina Wardani, S.Pd.' },
+    { id: 'Kelas 8.2', name: 'Kelas 8.2', wali: 'Dewi Sartika, S.Si.' },
+    { id: 'Kelas 8.3', name: 'Kelas 8.3', wali: 'Siti Nurhaliza, S.Si.' },
+    { id: 'Kelas 8.4', name: 'Kelas 8.4', wali: 'Dra. Endang Sulastri' },
+    { id: 'Kelas 9.1', name: 'Kelas 9.1', wali: 'Nurul Hidayah, S.Pd.' },
+    { id: 'Kelas 9.2', name: 'Kelas 9.2', wali: 'Bambang Irawan, S.Pd.' },
+    { id: 'Kelas 9.3', name: 'Kelas 9.3', wali: 'Siti Aminah, S.Pd.' },
+    { id: 'Kelas 9.4', name: 'Kelas 9.4', wali: 'Roni Hendrawan, S.Pd.' },
   ];
 
   const filteredDocs = homeroomDocs.filter((doc) => {
     // Filter class
     if (selectedClass !== 'Semua') {
-      const matchRole = doc.targetRole?.includes(selectedClass);
-      const matchTitle = doc.title.includes(selectedClass);
-      const matchGrade = doc.grade.replace(' ', '') === selectedClass.slice(0, 7).replace(' ', '');
-      if (!matchRole && !matchTitle && !matchGrade) return false;
+      const shortCode = selectedClass.replace('Kelas ', ''); // e.g., '7.1'
+      const matchRole = doc.targetRole?.includes(selectedClass) || doc.targetRole?.includes(shortCode);
+      const matchTitle = doc.title.includes(selectedClass) || doc.title.includes(shortCode);
+      const matchGrade = doc.grade === selectedClass;
+      const matchTags = doc.tags?.some((t) => t.includes(selectedClass) || t.includes(shortCode));
+      if (!matchRole && !matchTitle && !matchGrade && !matchTags) return false;
     }
 
     // Filter sub tab
@@ -161,8 +169,8 @@ export const HomeroomDocsView: React.FC<HomeroomDocsViewProps> = ({
           </div>
           <div className="bg-white/5 backdrop-blur-xs rounded-xl p-3 border border-white/10">
             <span className="text-[11px] text-teal-300 block">Rombongan Belajar</span>
-            <span className="text-xl font-bold font-mono text-teal-300">6 Rombel</span>
-            <span className="text-[10px] text-teal-200/70 block">Kelas 7, 8, 9</span>
+            <span className="text-xl font-bold font-mono text-teal-300">12 Kelas</span>
+            <span className="text-[10px] text-teal-200/70 block">7.1–7.4, 8.1–8.4, 9.1–9.4</span>
           </div>
           <div className="bg-white/5 backdrop-blur-xs rounded-xl p-3 border border-white/10">
             <span className="text-[11px] text-emerald-300 block">Terverifikasi Waka</span>

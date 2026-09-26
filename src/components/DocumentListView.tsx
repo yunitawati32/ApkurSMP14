@@ -16,12 +16,13 @@ import {
   Layers,
   ChevronDown,
 } from 'lucide-react';
-import { CurriculumDoc, CategoryDef } from '../types/curriculum';
-import { SUBJECT_LIST } from '../data/initialData';
+import { CurriculumDoc, CategoryDef, SchoolProfile } from '../types/curriculum';
+import { SUBJECT_LIST, INITIAL_TEACHERS } from '../data/initialData';
 
 interface DocumentListViewProps {
   documents: CurriculumDoc[];
   categories: CategoryDef[];
+  schoolProfile?: SchoolProfile;
   selectedCategory: string | null;
   setSelectedCategory: (cat: string | null) => void;
   searchQuery: string;
@@ -38,6 +39,7 @@ interface DocumentListViewProps {
 export const DocumentListView: React.FC<DocumentListViewProps> = ({
   documents,
   categories,
+  schoolProfile,
   selectedCategory,
   setSelectedCategory,
   searchQuery,
@@ -53,12 +55,27 @@ export const DocumentListView: React.FC<DocumentListViewProps> = ({
   // Local filter states
   const [selectedGrade, setSelectedGrade] = useState<string>('Semua');
   const [selectedSubject, setSelectedSubject] = useState<string>('Semua');
+  const [selectedTeacher, setSelectedTeacher] = useState<string>('Semua');
   const [selectedSemester, setSelectedSemester] = useState<string>('Semua');
   const [selectedStatus, setSelectedStatus] = useState<string>('Semua');
   const [selectedFileType, setSelectedFileType] = useState<string>('Semua');
   const [filterYear, setFilterYear] = useState<string>('Semua');
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   const [sortBy, setSortBy] = useState<'date-desc' | 'date-asc' | 'title' | 'code'>('date-desc');
+
+  // Merged teacher options
+  const teacherNamesList = useMemo(() => {
+    const master =
+      schoolProfile?.teachers && schoolProfile.teachers.length > 0
+        ? schoolProfile.teachers
+        : INITIAL_TEACHERS;
+    return Array.from(
+      new Set([
+        ...master.map((t) => t.name),
+        ...documents.map((d) => d.authorName),
+      ])
+    ).filter(Boolean);
+  }, [schoolProfile?.teachers, documents]);
 
   // Filter logic
   const filteredDocs = useMemo(() => {
@@ -85,6 +102,8 @@ export const DocumentListView: React.FC<DocumentListViewProps> = ({
       if (selectedGrade !== 'Semua') {
         if (selectedGrade === 'Fase D') {
           if (doc.grade !== 'Fase D' && doc.grade !== 'Semua Tingkat') return false;
+        } else if (['Kelas 7', 'Kelas 8', 'Kelas 9'].includes(selectedGrade)) {
+          if (doc.grade !== selectedGrade && !doc.grade.startsWith(`${selectedGrade}.`)) return false;
         } else if (doc.grade !== selectedGrade) {
           return false;
         }
@@ -93,6 +112,11 @@ export const DocumentListView: React.FC<DocumentListViewProps> = ({
       // Subject check
       if (selectedSubject !== 'Semua' && selectedSubject !== 'Semua Mata Pelajaran') {
         if (doc.subject !== selectedSubject) return false;
+      }
+
+      // Teacher check
+      if (selectedTeacher !== 'Semua') {
+        if (doc.authorName !== selectedTeacher) return false;
       }
 
       // Semester check
@@ -137,6 +161,7 @@ export const DocumentListView: React.FC<DocumentListViewProps> = ({
     selectedCategory,
     selectedGrade,
     selectedSubject,
+    selectedTeacher,
     selectedSemester,
     selectedStatus,
     selectedFileType,
@@ -149,6 +174,7 @@ export const DocumentListView: React.FC<DocumentListViewProps> = ({
     Boolean(selectedCategory) ||
     selectedGrade !== 'Semua' ||
     selectedSubject !== 'Semua' ||
+    selectedTeacher !== 'Semua' ||
     selectedSemester !== 'Semua' ||
     selectedStatus !== 'Semua' ||
     selectedFileType !== 'Semua' ||
@@ -159,6 +185,7 @@ export const DocumentListView: React.FC<DocumentListViewProps> = ({
     setSelectedCategory(null);
     setSelectedGrade('Semua');
     setSelectedSubject('Semua');
+    setSelectedTeacher('Semua');
     setSelectedSemester('Semua');
     setSelectedStatus('Semua');
     setSelectedFileType('Semua');
@@ -313,12 +340,32 @@ export const DocumentListView: React.FC<DocumentListViewProps> = ({
               aria-label="Filter Tingkat Kelas"
               className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-slate-700 focus:outline-none focus:ring-1 focus:ring-emerald-500"
             >
-              <option value="Semua">Semua Kelas</option>
-              <option value="Kelas 7">Kelas 7</option>
-              <option value="Kelas 8">Kelas 8</option>
-              <option value="Kelas 9">Kelas 9</option>
-              <option value="Fase D">Fase D</option>
-              <option value="Semua Tingkat">Semua Tingkat</option>
+              <option value="Semua">Semua Kelas (12 Rombel)</option>
+              <optgroup label="Tingkat Jenjang">
+                <option value="Kelas 7">Kelas 7 (7.1 - 7.4)</option>
+                <option value="Kelas 8">Kelas 8 (8.1 - 8.4)</option>
+                <option value="Kelas 9">Kelas 9 (9.1 - 9.4)</option>
+                <option value="Fase D">Fase D</option>
+                <option value="Semua Tingkat">Semua Tingkat</option>
+              </optgroup>
+              <optgroup label="Rombel Kelas 7">
+                <option value="Kelas 7.1">Kelas 7.1</option>
+                <option value="Kelas 7.2">Kelas 7.2</option>
+                <option value="Kelas 7.3">Kelas 7.3</option>
+                <option value="Kelas 7.4">Kelas 7.4</option>
+              </optgroup>
+              <optgroup label="Rombel Kelas 8">
+                <option value="Kelas 8.1">Kelas 8.1</option>
+                <option value="Kelas 8.2">Kelas 8.2</option>
+                <option value="Kelas 8.3">Kelas 8.3</option>
+                <option value="Kelas 8.4">Kelas 8.4</option>
+              </optgroup>
+              <optgroup label="Rombel Kelas 9">
+                <option value="Kelas 9.1">Kelas 9.1</option>
+                <option value="Kelas 9.2">Kelas 9.2</option>
+                <option value="Kelas 9.3">Kelas 9.3</option>
+                <option value="Kelas 9.4">Kelas 9.4</option>
+              </optgroup>
             </select>
           </div>
 
@@ -336,6 +383,26 @@ export const DocumentListView: React.FC<DocumentListViewProps> = ({
               {SUBJECT_LIST.map((subj) => (
                 <option key={subj} value={subj === 'Semua Mata Pelajaran' ? 'Semua' : subj}>
                   {subj}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Teacher Filter */}
+          <div>
+            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-600 block mb-1">
+              Nama Guru
+            </label>
+            <select
+              value={selectedTeacher}
+              onChange={(e) => setSelectedTeacher(e.target.value)}
+              aria-label="Filter Nama Guru"
+              className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-slate-700 focus:outline-none focus:ring-1 focus:ring-emerald-500 truncate"
+            >
+              <option value="Semua">Semua Guru ({teacherNamesList.length})</option>
+              {teacherNamesList.map((tName) => (
+                <option key={tName} value={tName}>
+                  {tName}
                 </option>
               ))}
             </select>
