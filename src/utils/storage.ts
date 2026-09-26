@@ -84,7 +84,7 @@ export const isLegacyTeacherName = (name?: string): boolean => {
 
 export const normalizeTeacherName = (name?: string): string => {
   if (!name) return 'Yunita Wati., S.Pd';
-  const trimmed = name.trim();
+  const trimmed = name.replace(/\s*\([^)]*\)\s*$/g, '').trim();
   const lower = trimmed.toLowerCase();
   if (LEGACY_TEACHER_MAP[lower]) {
     return LEGACY_TEACHER_MAP[lower];

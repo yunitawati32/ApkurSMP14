@@ -843,11 +843,11 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                   >
                     {teacherOptions.map((t) => (
                       <option key={t.id} value={t.name}>
-                        {t.name} {t.subject ? `(${t.subject})` : ''}
+                        {t.name}
                       </option>
                     ))}
                     {!teacherOptions.some((t) => t.name === authorName) && authorName && (
-                      <option value="__CUSTOM__">{authorName} (Ketik Manual)</option>
+                      <option value="__CUSTOM__">{authorName}</option>
                     )}
                     <option value="__ADD_NEW__">+ Tambah Nama Guru Baru ke Dropdown...</option>
                   </select>

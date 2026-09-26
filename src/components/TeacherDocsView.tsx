@@ -463,9 +463,11 @@ export const TeacherDocsView: React.FC<TeacherDocsViewProps> = ({
                 >
                   <div className="min-w-0">
                     <p className="text-xs font-bold text-slate-900 truncate">{t.name}</p>
-                    <p className="text-[10px] text-slate-500 truncate">
-                      {t.subject || 'Guru Mapel'} {t.nip ? `• NIP. ${t.nip}` : ''}
-                    </p>
+                    {t.nip && (
+                      <p className="text-[10px] text-slate-500 truncate font-mono">
+                        NIP. {t.nip}
+                      </p>
+                    )}
                   </div>
                   <button
                     type="button"
